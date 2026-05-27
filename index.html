@@ -1665,7 +1665,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 <div class="chat-overlay hidden" id="chat-overlay">
   <div class="chat-modal">
     <div class="chat-header">
-      <div class="chat-ai-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#06B6D4,#1E3A8A);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-0.5px;">L·AI</div>
+      <div class="chat-ai-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#06B6D4,#1E3A8A);display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:6px;"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAkUlEQVR42mNkQAL84lr/GegAPr68xghjM9HbcnS7mOhtObojGAfCcmTAxDDAYNQBow4YWg64d/0ow4cXVxnExUSwynNzczF8eHGV4e3TS6NRMOqAUQcMHQewkKPp5qWDGGJ6pm4Mb9+9H3ohMNogGXXAqANGHTDwDkDuKNIbfHx5jZEJvbdKT8tRooCejkC2CwD6XCz4I3pmQAAAAABJRU5ErkJggg==" style="width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1);"></div>
       <div style="flex:1;">
         <div class="chat-header-title">Ask Langa</div>
         <div class="chat-doc-name">
@@ -2832,7 +2832,7 @@ function appendAIMsg(text) {
   const t = new Date().toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
   const d = document.createElement('div');
   d.className = 'chat-msg chat-msg-ai';
-  d.innerHTML = '<div class="chat-mini-avatar" style="background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-size:9px;font-weight:800;letter-spacing:-0.5px;border-radius:8px;width:34px;height:26px;">L·AI</div><div><div class="chat-bubble">'+esc(text).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')+'</div><div class="chat-msg-time">'+t+'</div></div>';
+  d.innerHTML = '<div class="chat-mini-avatar" style="background:linear-gradient(135deg,var(--cyan),var(--blue));border-radius:8px;width:34px;height:26px;padding:3px;"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAkUlEQVR42mNkQAL84lr/GegAPr68xghjM9HbcnS7mOhtObojGAfCcmTAxDDAYNQBow4YWg64d/0ow4cXVxnExUSwynNzczF8eHGV4e3TS6NRMOqAUQcMHQewkKPp5qWDGGJ6pm4Mb9+9H3ohMNogGXXAqANGHTDwDkDuKNIbfHx5jZEJvbdKT8tRooCejkC2CwD6XCz4I3pmQAAAAABJRU5ErkJggg==" style="width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1);"></div><div><div class="chat-bubble">'+esc(text).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')+'</div><div class="chat-msg-time">'+t+'</div></div>';
   msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
 }
 
@@ -2841,7 +2841,7 @@ function appendTyping() {
   const id = 'typ-'+Date.now();
   const d = document.createElement('div');
   d.className = 'chat-msg chat-msg-ai'; d.id = id;
-  d.innerHTML = '<div class="chat-mini-avatar" style="background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-size:9px;font-weight:800;letter-spacing:-0.5px;border-radius:8px;width:34px;height:26px;">L·AI</div><div class="chat-typing"><span></span><span></span><span></span></div>';
+  d.innerHTML = '<div class="chat-mini-avatar" style="background:linear-gradient(135deg,var(--cyan),var(--blue));border-radius:8px;width:34px;height:26px;padding:3px;"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAkUlEQVR42mNkQAL84lr/GegAPr68xghjM9HbcnS7mOhtObojGAfCcmTAxDDAYNQBow4YWg64d/0ow4cXVxnExUSwynNzczF8eHGV4e3TS6NRMOqAUQcMHQewkKPp5qWDGGJ6pm4Mb9+9H3ohMNogGXXAqANGHTDwDkDuKNIbfHx5jZEJvbdKT8tRooCejkC2CwD6XCz4I3pmQAAAAABJRU5ErkJggg==" style="width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1);"></div><div class="chat-typing"><span></span><span></span><span></span></div>';
   msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
   return id;
 }
