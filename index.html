@@ -2227,15 +2227,25 @@ async function doLogin() {
       email: email, name: nameGuess,
       plan: 'freemium', avatar: nameGuess.charAt(0).toUpperCase(), maxDocs: 5
     };
+    // Fetch real profile to get stored name and plan
+    try {
+      var profile = await api('GET', '/auth/me');
+      var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
+      if (fullName) {
+        currentUser.name = fullName;
+        currentUser.avatar = fullName.charAt(0).toUpperCase();
+      }
+      currentUser.plan = profile.plan || 'freemium';
+    } catch(_) {}
     userDocs = [];
     showApp();
-    await loadUserDocuments();
   } catch(e) {
     err.textContent = e.type === 'network' ? 'Unable to connect. Check your connection.' : 'Incorrect email or password.';
     err.style.display = 'block';
   } finally {
     setLoading(btn, false, 'Sign in');
   }
+  if (authToken) await loadUserDocuments();
 }
 
 function doLogout() {
@@ -3455,10 +3465,17 @@ function initSettings() {
       : '<button class="btn btn-primary btn-full" onclick="showUpgradeModal()">Upgrade to Pro — R49/month</button>');
 }
 
-function saveSettings() {
+async function saveSettings() {
   var newName = document.getElementById('settings-name-input').value.trim();
   if (!newName) { toast('Name required', 'Please enter your name.', 'warn'); return; }
+  var parts = newName.split(' ');
+  var firstName = parts[0] || '';
+  var lastName = parts.slice(1).join(' ') || '';
+  try {
+    await api('PATCH', '/auth/me', { first_name: firstName, last_name: lastName });
+  } catch(_) {}
   currentUser.name = newName;
+  currentUser.avatar = newName.charAt(0).toUpperCase();
   document.getElementById('settings-name').textContent = newName;
   document.getElementById('nav-name').textContent = newName;
   document.getElementById('dash-name').textContent = newName.split(' ')[0];
