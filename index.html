@@ -2706,7 +2706,7 @@ async function sendChat() {
 
     if (authToken && chatDocContext._fromApi) {
       // Live API path
-      var result = await api('POST', '/chat/', { document_id: chatDocContext.id, question: msg });
+      var result = await api('POST', '/chat', { document_id: chatDocContext.id, question: msg });
       reply = result.answer;
       msgId = result.message_id;
     } else {
@@ -2953,7 +2953,7 @@ async function startAnalysisAPI(name) {
     var docId = uploadResult.document_id;
 
     // Step 2: Analyse the uploaded document
-    var analysisResult = await api('POST', '/analysis/', { document_id: docId });
+    var analysisResult = await api('POST', '/analysis', { document_id: docId });
 
     // Build local doc from API response
     var apiDocObj = { id: docId, name: name, type: 'contract', provider: null, status: 'active', is_analysed: true, created_at: new Date().toISOString() };
