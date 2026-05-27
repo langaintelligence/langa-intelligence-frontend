@@ -247,6 +247,21 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .modal-body{padding:24px;}
 .modal-footer{padding:16px 24px;border-top:1px solid var(--bdr);display:flex;gap:10px;justify-content:flex-end;}
 
+/* BILLING MODAL */
+.bill-nav{width:164px;flex-shrink:0;border-right:1px solid var(--bdr);padding:12px 0;background:var(--bg);}
+.bill-tab{padding:9px 14px;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:8px;margin:1px 8px;transition:all 0.15s;display:flex;align-items:center;gap:8px;}
+.bill-tab:hover{background:var(--white);color:var(--ink);}
+.bill-tab.active{background:var(--blue-l);color:var(--blue-d);font-weight:600;}
+.bill-content{flex:1;padding:28px;min-width:0;overflow-y:auto;max-height:520px;}
+.bill-panel{display:block;}
+.bill-plan-card{border:1.5px solid var(--bdr);border-radius:12px;padding:18px 16px;transition:border-color 0.2s;}
+.bill-plan-card.current{border-color:var(--blue);background:var(--blue-l);}
+.bill-plan-card:not(.current):hover{border-color:var(--blue-m);}
+.bill-feat{font-size:11.5px;color:var(--body);display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.bill-feat-no{color:var(--subtle);}
+.bill-info-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);border-radius:8px;font-size:12px;margin-bottom:8px;}
+.bill-invoice-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bdr);font-size:12.5px;}
+
 /* DOC DETAIL */
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
 .detail-item{background:var(--bg);border-radius:var(--rs);padding:12px 14px;}
@@ -1762,6 +1777,115 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       <button class="btn btn-primary btn-full btn-lg" onclick="simulateUpgrade()">Start Pro — R49/month</button>
       <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Cancel anytime · No hidden fees · First month free</div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════ BILLING MODAL ═══════════ -->
+<div class="overlay hidden" id="billing-overlay" onclick="closeBillingIfBg(event)">
+  <div class="modal" style="max-width:720px;padding:0;overflow:hidden;">
+    <div class="modal-header" style="background:linear-gradient(135deg,var(--navy),#1E3A5F);position:static;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8;"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <div class="modal-title" style="color:#fff;">Billing &amp; Subscription</div>
+      </div>
+      <button class="modal-close" style="background:rgba(255,255,255,0.12);color:#fff;" onclick="closeBilling()">✕</button>
+    </div>
+    <div style="display:flex;min-height:460px;">
+      <!-- Left tab nav -->
+      <div class="bill-nav">
+        <div class="bill-tab active" id="btab-overview" onclick="showBillTab('overview')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Overview
+        </div>
+        <div class="bill-tab" id="btab-plans" onclick="showBillTab('plans')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Change Plan
+        </div>
+        <div class="bill-tab" id="btab-payment" onclick="showBillTab('payment')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Payment
+        </div>
+        <div class="bill-tab" id="btab-history" onclick="showBillTab('history')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>History
+        </div>
+      </div>
+      <!-- Content panels -->
+      <div class="bill-content">
+
+        <!-- ── OVERVIEW ── -->
+        <div id="bpanel-overview" class="bill-panel">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:18px;">Plan Overview</div>
+          <!-- Plan summary card -->
+          <div style="border:1px solid var(--bdr);border-radius:12px;padding:20px;margin-bottom:14px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+              <div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;">Current plan</div>
+                <span id="bill-plan-chip" class="plan-chip plan-free">Freemium</span>
+              </div>
+              <div style="text-align:right;">
+                <div id="bill-price" style="font-size:26px;font-weight:700;color:var(--navy);">R0<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
+                <div id="bill-billing-desc" style="font-size:11px;color:var(--muted);">Free forever</div>
+              </div>
+            </div>
+            <div class="bill-info-row">
+              <span style="color:var(--muted);">Status</span>
+              <span id="bill-status-badge" style="display:flex;align-items:center;gap:5px;font-weight:600;color:#16A34A;"><span style="width:7px;height:7px;background:#16A34A;border-radius:50%;display:inline-block;"></span>Active</span>
+            </div>
+            <div class="bill-info-row">
+              <span style="color:var(--muted);">Next billing date</span>
+              <span id="bill-next-date" style="color:var(--ink);font-weight:500;">—</span>
+            </div>
+            <div class="bill-info-row" style="margin-bottom:0;">
+              <span style="color:var(--muted);">Payment processor</span>
+              <span style="color:var(--ink);font-weight:500;">Peach Payments</span>
+            </div>
+          </div>
+          <!-- Usage -->
+          <div style="border:1px solid var(--bdr);border-radius:12px;padding:16px 20px;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;">Document usage</div>
+            <div style="height:6px;background:var(--bdr);border-radius:999px;overflow:hidden;margin-bottom:6px;">
+              <div id="bill-usage-bar" style="height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:999px;width:0%;transition:width 0.4s;"></div>
+            </div>
+            <div id="bill-usage-text" style="font-size:11.5px;color:var(--muted);">0 / 2 documents used</div>
+          </div>
+          <!-- Actions -->
+          <div id="bill-overview-actions"></div>
+          <!-- Cancel confirm (shown inline) -->
+          <div id="bill-cancel-confirm" class="hidden" style="border:1.5px solid #FCA5A5;background:#FFF5F5;border-radius:12px;padding:20px;margin-top:14px;">
+            <div style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:6px;">Cancel your subscription?</div>
+            <div style="font-size:12.5px;color:var(--body);margin-bottom:14px;line-height:1.6;">You will immediately lose access to:<br>
+              <strong>AI chat, smart reminders, unlimited documents</strong> and full clause analysis.<br>
+              Your documents will remain, but analysis is limited to 2.
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost" onclick="hideBillCancel()">Keep my plan</button>
+              <button class="btn" id="bill-cancel-confirm-btn" style="background:#DC2626;color:#fff;border:none;" onclick="confirmBillCancel()">Yes, cancel subscription</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── CHANGE PLAN ── -->
+        <div id="bpanel-plans" class="bill-panel hidden">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Change Plan</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-bottom:20px;">Upgrades take effect immediately. Downgrades take effect at the end of your billing period.</div>
+          <div id="bill-plan-cards" style="display:flex;flex-direction:column;gap:12px;"></div>
+        </div>
+
+        <!-- ── PAYMENT METHOD ── -->
+        <div id="bpanel-payment" class="bill-panel hidden">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:18px;">Payment Method</div>
+          <div id="bill-payment-content">
+            <!-- Populated by renderBillingPayment() -->
+          </div>
+        </div>
+
+        <!-- ── BILLING HISTORY ── -->
+        <div id="bpanel-history" class="bill-panel hidden">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:18px;">Billing History</div>
+          <div id="bill-history-content">
+            <!-- Populated by renderBillingHistory() -->
+          </div>
+        </div>
+
+      </div><!-- /.bill-content -->
+    </div><!-- /split -->
   </div>
 </div>
 
@@ -3581,7 +3705,7 @@ function initSettings() {
     '</div>' +
     '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">' + userDocs.length + ' of ' + u.maxDocs + ' documents used</div>' +
     (isPro
-      ? '<button class="btn btn-ghost btn-full" style="font-size:12px;" onclick="toast(\'Subscription\',\'Manage your billing at billing.langa.ai\',\'info\')">Manage billing →</button>'
+      ? '<button class="btn btn-ghost btn-full" style="font-size:12px;" onclick="showBillingModal()">Manage billing →</button>'
       : '<button class="btn btn-primary btn-full" onclick="showUpgradeModal()">Upgrade to Pro — R49/month</button>');
 }
 
@@ -3760,6 +3884,202 @@ function simulateUpgrade() {
   toast('Welcome to Langa!', 'Unlimited AI chat, smart reminders and 10 documents unlocked.', 'success', 5000);
   addNotification('success', 'Upgraded to Pro!', 'Unlimited AI chat and smart reminders are now active on all your contracts.', true);
 }
+// ══════════════════════════════════════════
+// BILLING MODAL
+// ══════════════════════════════════════════
+var _billSummary = null;
+
+async function showBillingModal() {
+  show('billing-overlay');
+  showBillTab('overview');
+  _billSummary = null;
+  try {
+    _billSummary = await api('GET', '/billing/summary');
+  } catch(_) {
+    _billSummary = {
+      plan: currentUser.plan, plan_name: currentUser.plan === 'pro' ? 'Pro' : 'Freemium',
+      plan_status: 'active', price_zar: currentUser.plan === 'pro' ? 49 : 0,
+      billing_description: currentUser.plan === 'pro' ? 'Billed monthly' : 'Free forever',
+      next_billing_date: null, payment_method: null, invoices: [],
+    };
+  }
+  renderBillingOverview();
+  renderBillingPlans();
+  renderBillingPayment();
+  renderBillingHistory();
+}
+function closeBilling() { hide('billing-overlay'); hideBillCancel(); }
+function closeBillingIfBg(e) { if (e.target === document.getElementById('billing-overlay')) closeBilling(); }
+
+function showBillTab(tab) {
+  ['overview','plans','payment','history'].forEach(function(t) {
+    document.getElementById('bpanel-' + t).classList.toggle('hidden', t !== tab);
+    document.getElementById('btab-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+function renderBillingOverview() {
+  if (!_billSummary) return;
+  var s = _billSummary;
+  var isPro = s.plan !== 'freemium';
+
+  var chip = document.getElementById('bill-plan-chip');
+  chip.textContent = s.plan_name;
+  chip.className = 'plan-chip ' + (isPro ? 'plan-pro' : 'plan-free');
+
+  document.getElementById('bill-price').innerHTML = (isPro ? 'R' + s.price_zar : 'R0') + '<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span>';
+  document.getElementById('bill-billing-desc').textContent = s.billing_description || (isPro ? 'Billed monthly' : 'Free forever');
+  document.getElementById('bill-next-date').textContent = s.next_billing_date ? new Date(s.next_billing_date).toLocaleDateString('en-ZA', {day:'numeric',month:'long',year:'numeric'}) : '—';
+
+  var maxDocs = isPro ? (currentUser.maxDocs || 999) : 2;
+  var used = userDocs ? userDocs.length : 0;
+  var pct = maxDocs >= 999 ? Math.min(Math.round(used / 10 * 100), 100) : Math.round(used / maxDocs * 100);
+  document.getElementById('bill-usage-bar').style.width = pct + '%';
+  document.getElementById('bill-usage-bar').style.background = pct >= 80 ? 'linear-gradient(90deg,#F59E0B,#EF4444)' : 'linear-gradient(90deg,var(--cyan),var(--blue))';
+  document.getElementById('bill-usage-text').textContent = used + ' / ' + (maxDocs >= 999 ? 'Unlimited' : maxDocs) + ' documents used';
+
+  document.getElementById('bill-overview-actions').innerHTML = isPro
+    ? '<button class="btn btn-ghost btn-full" style="font-size:12.5px;color:#DC2626;border-color:#FCA5A5;" onclick="showBillCancel()">Cancel subscription →</button>'
+    : '<button class="btn btn-primary btn-full" onclick="closeBilling();showUpgradeModal();">Upgrade to Pro — R49/month</button>';
+}
+
+function renderBillingPlans() {
+  var container = document.getElementById('bill-plan-cards');
+  var current = _billSummary ? _billSummary.plan : (currentUser ? currentUser.plan : 'freemium');
+  var plans = [
+    { key:'freemium', name:'Freemium', price:'Free', desc:'Perfect for getting started', features:['2 documents','Basic risk summaries','Clause highlights'], missing:['Smart reminders','AI chat','Full dashboard'] },
+    { key:'pro',      name:'Pro',      price:'R49/mo', desc:'Full access for individuals', features:['Unlimited documents','Full clause analysis','AI chat per contract','Smart reminders','Insights dashboard'], missing:[] },
+    { key:'family',   name:'Family',   price:'R199/mo', desc:'For households — up to 5 users', features:['5 user accounts','All Pro features','Shared dashboard','Unlimited docs'], missing:[] },
+  ];
+  container.innerHTML = plans.map(function(p) {
+    var isCurrent = p.key === current;
+    var isDowngrade = (current === 'pro' && p.key === 'freemium') || (current === 'family' && p.key !== 'family');
+    var isUpgrade = !isCurrent && !isDowngrade;
+    var btn = isCurrent
+      ? '<div style="font-size:12px;font-weight:600;color:var(--blue);padding:8px 0;text-align:center;">✓ Current plan</div>'
+      : (p.key === 'family'
+        ? '<button class="btn btn-ghost btn-full btn-sm" style="margin-top:10px;" onclick="toast(\'Family Plan\',\'Contact us at hello@langai.co.za to set up a family plan.\',\'info\',6000)">Contact us →</button>'
+        : '<button class="btn btn-full btn-sm ' + (isUpgrade ? 'btn-primary' : 'btn-ghost') + '" style="margin-top:10px;" onclick="doBillChangePlan(\'' + p.key + '\')">' + (isUpgrade ? 'Upgrade' : 'Downgrade') + ' to ' + p.name + '</button>');
+    return '<div class="bill-plan-card ' + (isCurrent ? 'current' : '') + '">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+        '<div style="font-size:14px;font-weight:700;color:var(--navy);">' + p.name + '</div>' +
+        '<div style="font-size:15px;font-weight:700;color:' + (isCurrent ? 'var(--blue)' : 'var(--ink)') + ';">' + p.price + '</div>' +
+      '</div>' +
+      '<div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">' + p.desc + '</div>' +
+      p.features.map(function(f){ return '<div class="bill-feat"><span style="color:#16A34A;font-weight:700;font-size:11px;">✓</span>' + f + '</div>'; }).join('') +
+      p.missing.map(function(f){ return '<div class="bill-feat bill-feat-no"><span style="font-weight:700;font-size:11px;">✕</span>' + f + '</div>'; }).join('') +
+      btn +
+    '</div>';
+  }).join('');
+}
+
+function renderBillingPayment() {
+  var s = _billSummary;
+  var pm = s && s.payment_method;
+  var el = document.getElementById('bill-payment-content');
+  if (pm) {
+    el.innerHTML =
+      '<div style="border:1.5px solid var(--bdr);border-radius:12px;padding:20px;display:flex;align-items:center;gap:16px;margin-bottom:16px;">' +
+        '<div style="width:48px;height:32px;background:linear-gradient(135deg,#1E3A8A,#2563EB);border-radius:6px;display:flex;align-items:center;justify-content:center;">' +
+          '<svg width="22" height="16" viewBox="0 0 22 16" fill="none"><rect width="22" height="16" rx="3" fill="rgba(255,255,255,0.15)"/><line x1="0" y1="5" x2="22" y2="5" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/><rect x="2" y="9" width="6" height="2" rx="1" fill="rgba(255,255,255,0.5)"/></svg>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:600;color:var(--ink);">•••• •••• •••• ' + (pm.last4 || '****') + '</div>' +
+          '<div style="font-size:11.5px;color:var(--muted);">' + (pm.brand || 'Card') + ' · Expires ' + (pm.expiry || '--/--') + '</div>' +
+        '</div>' +
+        '<button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:12px;" onclick="toast(\'Update card\',\'Card management via Peach Payments — coming soon.\',\'info\')">Update →</button>' +
+      '</div>';
+  } else {
+    el.innerHTML =
+      '<div style="border:1.5px dashed var(--bdr);border-radius:12px;padding:32px 20px;text-align:center;margin-bottom:16px;">' +
+        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="margin:0 auto 12px;display:block;"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;">No payment method on file</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Secure card management via Peach Payments.</div>' +
+        '<button class="btn btn-primary" style="opacity:0.55;cursor:not-allowed;" disabled>Add payment method — coming soon</button>' +
+      '</div>' +
+      '<div style="font-size:11.5px;color:var(--subtle);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+        'Card details are encrypted and stored securely by Peach Payments. Langa never stores raw card data.' +
+      '</div>';
+  }
+}
+
+function renderBillingHistory() {
+  var s = _billSummary;
+  var invoices = (s && s.invoices) || [];
+  var el = document.getElementById('bill-history-content');
+  if (!invoices.length) {
+    el.innerHTML =
+      '<div style="text-align:center;padding:48px 20px;">' +
+        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="margin:0 auto 12px;display:block;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;">No invoices yet</div>' +
+        '<div style="font-size:12px;color:var(--muted);">Your billing history will appear here once payments are active.</div>' +
+      '</div>';
+    return;
+  }
+  el.innerHTML =
+    '<div style="font-size:11.5px;color:var(--muted);display:grid;grid-template-columns:1fr 1fr 80px 70px;gap:8px;padding:0 0 8px;border-bottom:1px solid var(--bdr);font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">' +
+      '<span>Date</span><span>Description</span><span>Amount</span><span>Status</span></div>' +
+    invoices.map(function(inv) {
+      var statusColor = inv.status === 'paid' ? '#16A34A' : inv.status === 'failed' ? '#DC2626' : 'var(--muted)';
+      return '<div class="bill-invoice-row" style="display:grid;grid-template-columns:1fr 1fr 80px 70px;gap:8px;">' +
+        '<span>' + (inv.date || '—') + '</span>' +
+        '<span>' + (inv.description || 'Subscription') + '</span>' +
+        '<span style="font-weight:600;">R' + (inv.amount_zar || '—') + '</span>' +
+        '<span style="color:' + statusColor + ';font-weight:600;text-transform:capitalize;">' + (inv.status || '—') + '</span>' +
+      '</div>';
+    }).join('');
+}
+
+async function doBillChangePlan(plan) {
+  var label = plan === 'pro' ? 'Pro (R49/mo)' : plan === 'freemium' ? 'Freemium (Free)' : 'Family (R199/mo)';
+  if (plan === 'freemium' && currentUser.plan !== 'freemium') {
+    if (!confirm('Downgrade to Freemium? You will lose Pro features at the end of your billing period.')) return;
+  }
+  try {
+    var res = await api('POST', '/billing/change-plan', { plan: plan });
+    currentUser.plan = res.plan;
+    currentUser.maxDocs = res.plan === 'pro' || res.plan === 'family' ? 999 : 2;
+    _billSummary.plan = res.plan;
+    _billSummary.plan_name = res.plan_name;
+    _billSummary.price_zar = res.price_zar;
+    _billSummary.billing_description = res.plan === 'freemium' ? 'Free forever' : 'Billed monthly';
+    document.getElementById('nav-plan').textContent = res.plan === 'pro' ? 'Pro' : res.plan === 'family' ? 'Family' : 'Freemium';
+    document.getElementById('nav-plan').className = 'plan-chip ' + (res.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
+    renderBillingOverview(); renderBillingPlans(); renderStats(); renderSidebar();
+    showBillTab('overview');
+    toast('Plan updated', 'You are now on the ' + label + ' plan.', 'success', 5000);
+  } catch(e) {
+    toast('Error', e.message || 'Could not change plan. Please try again.', 'error');
+  }
+}
+
+function showBillCancel() {
+  show('bill-cancel-confirm');
+  document.getElementById('bill-cancel-confirm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function hideBillCancel() { hide('bill-cancel-confirm'); }
+
+async function confirmBillCancel() {
+  var btn = document.getElementById('bill-cancel-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Cancelling…';
+  try {
+    await api('POST', '/billing/cancel');
+    currentUser.plan = 'freemium'; currentUser.maxDocs = 2;
+    _billSummary.plan = 'freemium'; _billSummary.plan_name = 'Freemium';
+    _billSummary.price_zar = 0; _billSummary.billing_description = 'Free forever';
+    document.getElementById('nav-plan').textContent = 'Freemium';
+    document.getElementById('nav-plan').className = 'plan-chip plan-free';
+    hideBillCancel();
+    renderBillingOverview(); renderBillingPlans(); renderStats(); renderSidebar();
+    showBillTab('overview');
+    toast('Subscription cancelled', 'You have been moved to the Freemium plan.', 'info', 6000);
+  } catch(e) {
+    toast('Error', e.message || 'Could not cancel. Please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Yes, cancel subscription';
+  }
+}
+
 var _remDocId = null;
 var _remExisting = [];
 var _remSelectedType = null;
