@@ -912,8 +912,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       </nav>
       <div class="landing-nav-cta" style="display:flex;gap:10px;align-items:center;">
         <button class="btn btn-ghost" onclick="showLogin()" style="display:flex;align-items:center;gap:7px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          View Demo
+          Sign In
         </button>
         <button class="btn btn-primary" onclick="showSignup()" style="background:linear-gradient(135deg,#06B6D4,#2563EB);">Get Started</button>
       </div>
@@ -2042,6 +2041,7 @@ async function _tryRefresh() {
     var data = await res.json();
     authToken = data.access_token;
     refreshToken = data.refresh_token;
+    if (refreshToken) sessionStorage.setItem('lrt', refreshToken);
     return true;
   } catch(e) { return false; }
 }
@@ -2230,6 +2230,7 @@ async function doLogin() {
     var data = await api('POST', '/auth/login', { email: email, password: pass });
     authToken = data.access_token;
     refreshToken = data.refresh_token || null;
+    if (refreshToken) sessionStorage.setItem('lrt', refreshToken);
     var nameGuess = (data.email || email).split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
     currentUser = {
       email: email, name: nameGuess,
@@ -2267,6 +2268,7 @@ function doLogout() {
   }
   authToken = null; refreshToken = null; currentUser = null; userDocs = []; pendingUploadFile = null;
   localStorage.removeItem('langa_user');
+  sessionStorage.removeItem('lrt');
   showLanding();
 }
 
@@ -4595,6 +4597,33 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 
   localStorage.removeItem('langa_token'); // clean up legacy key
+
+  // Restore session from stored refresh token (survives page refresh, cleared on tab close)
+  var storedRefresh = sessionStorage.getItem('lrt');
+  if (storedRefresh) {
+    refreshToken = storedRefresh;
+    var restored = await _tryRefresh();
+    if (restored) {
+      try {
+        var profile = await api('GET', '/auth/me');
+        var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
+        currentUser = {
+          email: profile.email,
+          name: fullName || profile.email.split('@')[0],
+          avatar: (fullName || profile.email).charAt(0).toUpperCase(),
+          plan: profile.plan || 'freemium',
+          maxDocs: (profile.plan === 'pro') ? 999 : 5,
+        };
+        localStorage.setItem('langa_user', JSON.stringify(currentUser));
+        showApp();
+        return;
+      } catch(_) {}
+    }
+    // Refresh failed — clear stale token and show landing
+    sessionStorage.removeItem('lrt');
+    refreshToken = null;
+  }
+
   showLanding();
 });
 </script>
