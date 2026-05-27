@@ -331,6 +331,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .chat-input{flex:1;background:rgba(255,255,255,0.8);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.5);border-radius:var(--rs);padding:11px 16px;font-size:13px;font-family:Sora,sans-serif;outline:none;color:var(--ink);}
 .chat-input:focus{border-color:rgba(37,99,235,0.5);}
 .chat-hint{text-align:center;font-size:11px;color:rgba(255,255,255,0.35);padding:6px 0 0;}
+.chat-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:40px 0;}
+.chat-loading-dots{display:flex;gap:6px;}
+.chat-loading-dots span{width:8px;height:8px;background:rgba(255,255,255,0.4);border-radius:50%;animation:bounce 1.1s ease-in-out infinite;}
+.chat-loading-dots span:nth-child(2){animation-delay:.2s;}
+.chat-loading-dots span:nth-child(3){animation-delay:.4s;}
 
 /* REMINDERS */
 .reminder-card{border:1px solid var(--bdr);border-radius:var(--rs);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;}
@@ -2765,8 +2770,6 @@ async function openChat(doc) {
   freeMessagesUsed = 0;
 
   document.getElementById('chat-doc-name').textContent = doc.name;
-  var msgs = document.getElementById('chat-messages');
-  msgs.innerHTML = '';
 
   var isPro = currentUser && currentUser.plan === 'pro';
   var limitBar = document.getElementById('chat-limit-bar');
@@ -2775,22 +2778,28 @@ async function openChat(doc) {
   if (wall) wall.classList.add('hidden');
   var inputRow = document.getElementById('chat-input-row');
   var hint = document.getElementById('chat-hint');
-  if (inputRow) inputRow.classList.remove('hidden');
-  if (hint) hint.classList.remove('hidden');
-  updateChatPips();
+  if (inputRow) inputRow.classList.add('hidden');
+  if (hint) hint.classList.add('hidden');
 
-  // Load chat history from API if authenticated and doc is from API
+  // Show overlay immediately with a loading state — don't wait for history fetch
+  var msgs = document.getElementById('chat-messages');
+  msgs.innerHTML = '<div class="chat-loading"><div class="chat-loading-dots"><span></span><span></span><span></span></div><div style="font-size:12px;color:rgba(255,255,255,0.45);">Loading conversation…</div></div>';
+  document.getElementById('chat-suggestions').innerHTML = '';
+  show('chat-overlay');
+
+  // Fetch history in background, then render everything at once
   if (authToken && doc._fromApi) {
     try {
       var histData = await api('GET', '/chat/' + doc.id + '/history');
-      var history = (histData.messages || []).slice(-10);
-      chatHistory = history;
-      history.forEach(function(m) {
-        if (m.role === 'user') appendUserMsg(m.content);
-        else appendAIMsg(m.content);
-      });
-    } catch(e) { /* silent — history load failure shouldn't block chat */ }
+      chatHistory = (histData.messages || []).slice(-10);
+    } catch(e) { /* silent */ }
   }
+
+  msgs.innerHTML = '';
+  chatHistory.forEach(function(m) {
+    if (m.role === 'user') appendUserMsg(m.content);
+    else appendAIMsg(m.content);
+  });
 
   var riskVal = doc.risk || '';
   var isHigh = riskVal === 'high' || riskVal === 'needs attention';
@@ -2804,7 +2813,9 @@ async function openChat(doc) {
     return '<div class="chat-sq" onclick="sendSuggest(\'' + q.replace(/'/g, "&#39;") + '\')">' + q + '</div>';
   }).join('');
 
-  show('chat-overlay');
+  if (inputRow) inputRow.classList.remove('hidden');
+  if (hint) hint.classList.remove('hidden');
+  updateChatPips();
   document.getElementById('chat-input').focus();
 }
 
