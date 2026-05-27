@@ -2289,6 +2289,8 @@ const BASE_DOCS_PRO = [
 
 let currentUser = null;
 let userDocs = [];
+
+function planMaxDocs(plan) { return (plan === 'pro' || plan === 'family') ? 999 : 2; }
 let currentDoc = null;
 let chatHistory = [];
 let chatDocContext = null;
@@ -2363,7 +2365,7 @@ async function doLogin() {
     var nameGuess = (data.email || email).split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
     currentUser = {
       email: email, name: nameGuess,
-      plan: 'freemium', avatar: nameGuess.charAt(0).toUpperCase(), maxDocs: 5
+      plan: 'freemium', avatar: nameGuess.charAt(0).toUpperCase(), maxDocs: 2
     };
     // Fetch real profile to get stored name and plan
     try {
@@ -2374,6 +2376,7 @@ async function doLogin() {
         currentUser.avatar = fullName.charAt(0).toUpperCase();
       }
       currentUser.plan = profile.plan || 'freemium';
+      currentUser.maxDocs = planMaxDocs(currentUser.plan);
     } catch(_) {}
     localStorage.setItem('langa_user', JSON.stringify(currentUser));
     userDocs = [];
@@ -3885,7 +3888,7 @@ function showUpgradeModal() { show('upgrade-overlay'); }
 function closeUpgrade() { hide('upgrade-overlay'); }
 function closeUpgradeIfBg(e) { if(e.target===document.getElementById('upgrade-overlay')) closeUpgrade(); }
 function simulateUpgrade() {
-  currentUser.plan = 'pro'; currentUser.maxDocs = 10;
+  currentUser.plan = 'pro'; currentUser.maxDocs = planMaxDocs('pro');
   userDocs = JSON.parse(JSON.stringify(BASE_DOCS_PRO));
   document.getElementById('nav-plan').textContent = 'Pro';
   document.getElementById('nav-plan').className = 'plan-chip plan-pro';
@@ -4438,7 +4441,7 @@ async function completeSignup() {
     var name = signupData.first + ' ' + signupData.last;
     currentUser = {
       email: signupData.email, name: name,
-      plan: 'freemium', avatar: signupData.first.charAt(0).toUpperCase(), maxDocs: 5
+      plan: 'freemium', avatar: signupData.first.charAt(0).toUpperCase(), maxDocs: 2
     };
     userDocs = [];
 
@@ -4943,7 +4946,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           name: fullName || profile.email.split('@')[0],
           avatar: (fullName || profile.email).charAt(0).toUpperCase(),
           plan: profile.plan || 'freemium',
-          maxDocs: (profile.plan === 'pro') ? 999 : 5,
+          maxDocs: planMaxDocs(profile.plan),
         };
         localStorage.setItem('langa_user', JSON.stringify(currentUser));
         showApp();
