@@ -1976,7 +1976,6 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 // ═══════════════════════════════════
 const API_BASE = 'https://langa-intelligence-production.up.railway.app';
 
-// In-memory JWT storage (never written to localStorage)
 let authToken = null;
 
 // Holds the actual File object selected for upload
@@ -2024,6 +2023,8 @@ async function api(method, path, body, opts) {
 
   if (res.status === 401) {
     authToken = null; currentUser = null; userDocs = [];
+    localStorage.removeItem('langa_token');
+    localStorage.removeItem('langa_user');
     showLogin();
     throw { type: '401', message: 'Session expired. Please log in again.' };
   }
@@ -2237,6 +2238,8 @@ async function doLogin() {
       }
       currentUser.plan = profile.plan || 'freemium';
     } catch(_) {}
+    localStorage.setItem('langa_token', authToken);
+    localStorage.setItem('langa_user', JSON.stringify(currentUser));
     userDocs = [];
     showApp();
   } catch(e) {
@@ -2250,6 +2253,8 @@ async function doLogin() {
 
 function doLogout() {
   authToken = null; currentUser = null; userDocs = []; pendingUploadFile = null;
+  localStorage.removeItem('langa_token');
+  localStorage.removeItem('langa_user');
   showLanding();
 }
 
@@ -4349,5 +4354,34 @@ function showLegalPage(page) {
   </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+  var savedToken = localStorage.getItem('langa_token');
+  var savedUser  = localStorage.getItem('langa_user');
+  if (savedToken && savedUser) {
+    try {
+      authToken   = savedToken;
+      currentUser = JSON.parse(savedUser);
+      // Re-fetch profile so name/plan stay fresh
+      try {
+        var profile  = await api('GET', '/auth/me');
+        var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
+        if (fullName) { currentUser.name = fullName; currentUser.avatar = fullName.charAt(0).toUpperCase(); }
+        currentUser.plan = profile.plan || currentUser.plan || 'freemium';
+        localStorage.setItem('langa_user', JSON.stringify(currentUser));
+      } catch(_) {}
+      userDocs = [];
+      showApp();
+      await loadUserDocuments();
+    } catch(e) {
+      localStorage.removeItem('langa_token');
+      localStorage.removeItem('langa_user');
+      showLanding();
+    }
+  } else {
+    showLanding();
+  }
+});
+</script>
 </body>
 </html>
