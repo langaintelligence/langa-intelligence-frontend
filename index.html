@@ -3352,17 +3352,16 @@ function closeViewerIfBg(e) {
   if (e.target === document.getElementById('viewer-overlay')) closeViewer();
 }
 
-function downloadContract() {
+async function downloadContract() {
   if (!currentDoc) return;
-  var text = document.getElementById('viewer-text').textContent;
-  var blob = new Blob([text], {type: 'text/plain'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = currentDoc.name.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_') + '_LangaAI.txt';
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('Downloaded', currentDoc.name + ' saved to your device.', 'success');
+  if (!currentDoc._fromApi) { toast('Download unavailable', 'Only uploaded PDF documents can be downloaded.', 'warn'); return; }
+  try {
+    var result = await api('GET', '/documents/' + currentDoc.id + '/download');
+    window.open(result.url, '_blank');
+    toast('Downloading', currentDoc.name + ' — opening PDF.', 'success');
+  } catch(e) {
+    toast('Download failed', e.message || 'Could not generate download link.', 'warn');
+  }
 }
 
 function showReminderFromId(docId) {
