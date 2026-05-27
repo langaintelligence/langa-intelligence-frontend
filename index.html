@@ -2020,6 +2020,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 const API_BASE = 'https://langa-intelligence-production.up.railway.app';
 
 let authToken = null;
+let refreshToken = null;
 
 // Holds the actual File object selected for upload
 let pendingUploadFile = null;
@@ -2065,9 +2066,11 @@ async function api(method, path, body, opts) {
   }
 
   if (res.status === 401) {
-    authToken = null; currentUser = null; userDocs = [];
-    localStorage.removeItem('langa_token');
-    localStorage.removeItem('langa_user');
+    if (refreshToken && !opts._noRefresh && !opts.formData) {
+      var refreshed = await _tryRefresh();
+      if (refreshed) return api(method, path, body, Object.assign({}, opts, { _noRefresh: true }));
+    }
+    authToken = null; refreshToken = null; currentUser = null; userDocs = [];
     showLogin();
     throw { type: '401', message: 'Session expired. Please log in again.' };
   }
@@ -2081,6 +2084,21 @@ async function api(method, path, body, opts) {
   if (res.status === 503) throw { type: '503', message: payload.detail || 'AI features not yet configured.' };
   if (!res.ok) throw { type: 'server', message: payload.detail || 'Something went wrong. Please try again.' };
   return payload;
+}
+
+async function _tryRefresh() {
+  try {
+    var res = await fetch(API_BASE + '/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return false;
+    var data = await res.json();
+    authToken = data.access_token;
+    refreshToken = data.refresh_token;
+    return true;
+  } catch(e) { return false; }
 }
 
 // ── Map API doc + optional analysis → local doc format ───────────────────────
@@ -2266,6 +2284,7 @@ async function doLogin() {
   try {
     var data = await api('POST', '/auth/login', { email: email, password: pass });
     authToken = data.access_token;
+    refreshToken = data.refresh_token || null;
     var nameGuess = (data.email || email).split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
     currentUser = {
       email: email, name: nameGuess,
@@ -2281,7 +2300,6 @@ async function doLogin() {
       }
       currentUser.plan = profile.plan || 'freemium';
     } catch(_) {}
-    localStorage.setItem('langa_token', authToken);
     localStorage.setItem('langa_user', JSON.stringify(currentUser));
     userDocs = [];
     showApp();
@@ -2295,8 +2313,14 @@ async function doLogin() {
 }
 
 function doLogout() {
-  authToken = null; currentUser = null; userDocs = []; pendingUploadFile = null;
-  localStorage.removeItem('langa_token');
+  if (refreshToken) {
+    fetch(API_BASE + '/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    }).catch(function(){});
+  }
+  authToken = null; refreshToken = null; currentUser = null; userDocs = []; pendingUploadFile = null;
   localStorage.removeItem('langa_user');
   showLanding();
 }
@@ -4479,31 +4503,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
 
-  var savedToken = localStorage.getItem('langa_token');
-  var savedUser  = localStorage.getItem('langa_user');
-  if (savedToken && savedUser) {
-    try {
-      authToken   = savedToken;
-      currentUser = JSON.parse(savedUser);
-      // Re-fetch profile so name/plan stay fresh
-      try {
-        var profile  = await api('GET', '/auth/me');
-        var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
-        if (fullName) { currentUser.name = fullName; currentUser.avatar = fullName.charAt(0).toUpperCase(); }
-        currentUser.plan = profile.plan || currentUser.plan || 'freemium';
-        localStorage.setItem('langa_user', JSON.stringify(currentUser));
-      } catch(_) {}
-      userDocs = [];
-      showApp();
-      await loadUserDocuments();
-    } catch(e) {
-      localStorage.removeItem('langa_token');
-      localStorage.removeItem('langa_user');
-      showLanding();
-    }
-  } else {
-    showLanding();
-  }
+  localStorage.removeItem('langa_token'); // clean up legacy key
+  showLanding();
 });
 </script>
 </body>
