@@ -2419,11 +2419,13 @@ async function doLogin() {
     authToken = data.access_token;
     refreshToken = data.refresh_token || null;
     if (refreshToken) sessionStorage.setItem('lrt', refreshToken);
-    // Show dashboard immediately using email-derived name as placeholder
-    var nameGuess = (data.email || email).split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    // Use first_name from login response; fall back to email-derived guess while /auth/me loads
+    var initialName = (data.first_name && data.first_name.trim())
+      ? data.first_name.trim()
+      : (data.email || email).split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
     currentUser = {
-      email: email, name: nameGuess,
-      plan: 'freemium', avatar: nameGuess.charAt(0).toUpperCase(), maxDocs: 2
+      email: email, name: initialName,
+      plan: 'freemium', avatar: initialName.charAt(0).toUpperCase(), maxDocs: 2
     };
     userDocs = [];
     showApp();
