@@ -4973,6 +4973,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         localStorage.setItem('langa_user', JSON.stringify(currentUser));
         _hideCover();
         showApp();
+        await loadUserDocuments();
         return;
       } catch(_) {}
     }
