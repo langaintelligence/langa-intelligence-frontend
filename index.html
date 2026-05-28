@@ -3537,7 +3537,16 @@ async function renderReminders() {
   try {
     var resp = await api('GET', '/reminders');
     dbReminders = resp.reminders || [];
-  } catch(e) { /* silent — show whatever we have */ }
+  } catch(e) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:60px 20px;color:var(--muted);">' +
+        '<div style="font-size:32px;margin-bottom:12px;">⚠️</div>' +
+        '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">Could not load reminders</div>' +
+        '<div style="font-size:12px;margin-bottom:16px;">' + (e.message || 'Please check your connection.') + '</div>' +
+        '<button class="btn btn-outline btn-sm" onclick="renderReminders()">Retry</button>' +
+      '</div>';
+    return;
+  }
 
   // ── Build doc-date-derived alerts from local userDocs ────────────────────
   var urgent = [], medium = [], autoUpcoming = [];
