@@ -3522,7 +3522,7 @@ function guessType(ct) {
 // REMINDERS
 // ═══════════════════════════════════
 function renderReminders() {
-  const urgent = [], medium = [], upcoming = [];
+  const urgent = [], medium = [], upcoming = [], scheduled = [];
 
   userDocs.forEach(function(d) {
     if (d.cancelDeadline) {
@@ -3537,20 +3537,32 @@ function renderReminders() {
     if (d.renewalDate) {
       upcoming.push({ docId: d.id, title: d.name + ' — renewal date', desc: 'This document renews ' + d.renewalDate + '. Review terms before it auto-renews.', when: 'Upcoming', whenColor: 'var(--green)', badgeBg: 'var(--green-l)', badgeColor: '#14532D', barColor: 'var(--green)' });
     }
+    // User-set reminders from chat (stored in reminders table)
+    (d.reminders || []).forEach(function(r) {
+      var dateStr = r.target_date ? new Date(r.target_date + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}) : '';
+      scheduled.push({
+        remId: r.id,
+        docId: d.id,
+        title: r.title || r.reminder_type || 'Reminder',
+        desc: 'Scheduled reminder' + (dateStr ? ' for ' + dateStr : '') + ' · ' + esc(d.name),
+        when: dateStr || 'Scheduled',
+        badgeBg: 'var(--blue-l)', badgeColor: '#1E40AF', barColor: 'var(--blue)',
+      });
+    });
   });
 
-  var allReminders = urgent.concat(medium, upcoming);
+  var allReminders = urgent.concat(medium, upcoming, scheduled);
   var container = document.getElementById('reminders-list');
 
   // Summary bar
   var summaryHTML = '<div class="reminder-summary-bar">' +
     '<div class="rsb-card"><div class="rsb-val c-red">' + urgent.length + '</div><div class="rsb-lbl">Urgent</div></div>' +
     '<div class="rsb-card"><div class="rsb-val c-amber">' + medium.length + '</div><div class="rsb-lbl">Due soon</div></div>' +
-    '<div class="rsb-card"><div class="rsb-val c-blue">' + upcoming.length + '</div><div class="rsb-lbl">Upcoming</div></div>' +
+    '<div class="rsb-card"><div class="rsb-val c-blue">' + (upcoming.length + scheduled.length) + '</div><div class="rsb-lbl">Upcoming</div></div>' +
   '</div>';
 
   if (!allReminders.length) {
-    container.innerHTML = summaryHTML + '<div style="text-align:center;padding:60px 20px;color:var(--muted);"><div style="font-size:48px;margin-bottom:14px;opacity:0.3;">🔔</div><div style="font-size:16px;font-weight:600;margin-bottom:6px;">No reminders yet</div><div style="font-size:13px;">Upload a contract and Langa will track all your deadlines automatically.</div></div>';
+    container.innerHTML = summaryHTML + '<div style="text-align:center;padding:60px 20px;color:var(--muted);"><div style="font-size:48px;margin-bottom:14px;opacity:0.3;">🔔</div><div style="font-size:16px;font-weight:600;margin-bottom:6px;">No reminders yet</div><div style="font-size:13px;">Upload a contract and Langa will track all your deadlines automatically. You can also ask Langa to set a reminder in the chat.</div></div>';
     return;
   }
 
@@ -3558,6 +3570,12 @@ function renderReminders() {
     if (!items.length) return '';
     return '<div class="rem-section-head"><span class="rem-section-lbl">' + label + ' (' + items.length + ')</span></div>' +
       items.map(function(r) {
+        var footer = '<span class="rc-doc-chip" data-docid="'+r.docId+'" onclick="openDetail(this.dataset.docid)">View document &#8594;</span>';
+        if (r.remId) {
+          footer += '<button class="btn btn-ghost btn-sm" onclick="deleteScheduledReminder(\''+r.remId+'\',\''+r.docId+'\')" style="color:var(--red);">Delete</button>';
+        } else {
+          footer += '<button class="btn btn-ghost btn-sm" onclick="showReminderFromId(\'' + r.docId + '\')">🔔 Set reminder</button>';
+        }
         return '<div class="reminder-card">' +
           '<div class="rc-bar" style="background:' + r.barColor + '"></div>' +
           '<div class="rc-body">' +
@@ -3566,10 +3584,7 @@ function renderReminders() {
               '<span class="rc-when-badge" style="background:' + r.badgeBg + ';color:' + r.badgeColor + '">' + esc(r.when) + '</span>' +
             '</div>' +
             '<div class="rc-desc">' + esc(r.desc) + '</div>' +
-            '<div class="rc-footer">' +
-              '<span class="rc-doc-chip" data-docid="'+r.docId+'" onclick="openDetail(this.dataset.docid)">View contract &#8594;</span>' +
-              '<button class="btn btn-ghost btn-sm" onclick="showReminderFromId(\'' + r.docId + '\')">🔔 Set reminder</button>' +
-            '</div>' +
+            '<div class="rc-footer">' + footer + '</div>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -3578,7 +3593,8 @@ function renderReminders() {
   container.innerHTML = summaryHTML +
     buildSection(urgent, '🔴 Urgent') +
     buildSection(medium, '🟡 Due soon') +
-    buildSection(upcoming, '🟢 Upcoming');
+    buildSection(upcoming, '🟢 Upcoming') +
+    buildSection(scheduled, '🔵 Scheduled');
 }
 
 // ═══════════════════════════════════
@@ -4651,6 +4667,11 @@ async function deleteDocReminder(reminderId, docId) {
   } catch(e) {
     toast('Could not delete reminder', apiErrMsg(e), 'warn', 3000);
   }
+}
+
+async function deleteScheduledReminder(reminderId, docId) {
+  await deleteDocReminder(reminderId, docId);
+  renderReminders();
 }
 
 // ═══════════════════════════════════
