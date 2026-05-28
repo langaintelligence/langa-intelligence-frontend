@@ -5103,12 +5103,38 @@ document.addEventListener('DOMContentLoaded', async function() {
   var _cover = document.getElementById('session-cover');
   function _hideCover() { if (_cover) _cover.style.display = 'none'; }
 
-  // Check for password recovery link first (Supabase puts tokens in the URL hash)
+  // Handle query-param signals from the backend (email verification, errors)
+  var qp = new URLSearchParams(window.location.search);
+  if (qp.get('email_verified') === '1') {
+    history.replaceState(null, '', window.location.pathname);
+    _hideCover();
+    showLogin();
+    setTimeout(function() { toast('Email confirmed!', 'Your account is active. You can now sign in.', 'success', 6000); }, 300);
+    return;
+  }
+  if (qp.get('email_error') === '1') {
+    history.replaceState(null, '', window.location.pathname);
+    _hideCover();
+    showLogin();
+    setTimeout(function() { toast('Confirmation failed', 'The link may have expired. Please contact support.', 'warn', 6000); }, 300);
+    return;
+  }
+  if ((qp.get('type') === 'reset' || qp.get('type') === 'recovery') && qp.get('access_token')) {
+    resetAccessToken = qp.get('access_token');
+    history.replaceState(null, '', window.location.pathname);
+    _hideCover();
+    showResetPage();
+    return;
+  }
+
+  // Check for password reset link (hash-based: #type=reset&access_token=TOKEN)
   var hashStr = window.location.hash.substring(1);
   if (hashStr) {
     var hashParams = new URLSearchParams(hashStr);
-    if (hashParams.get('type') === 'recovery' && hashParams.get('access_token')) {
-      resetAccessToken = hashParams.get('access_token');
+    var hashType = hashParams.get('type');
+    var hashToken = hashParams.get('access_token');
+    if ((hashType === 'recovery' || hashType === 'reset') && hashToken) {
+      resetAccessToken = hashToken;
       history.replaceState(null, '', window.location.pathname);
       _hideCover();
       showResetPage();
