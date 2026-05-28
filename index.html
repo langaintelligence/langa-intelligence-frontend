@@ -1430,6 +1430,26 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
   </div>
 </div>
 
+<!-- ═══════════ CONFIRM EMAIL ═══════════ -->
+<div id="page-confirm" class="hidden" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%);padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:48px 40px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.35);text-align:center;">
+    <div style="margin-bottom:28px;">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;background:#0F172A;border-radius:12px;font-family:'DM Serif Display',serif;font-size:20px;font-weight:700;color:#38BDF8;letter-spacing:-1px;">LI</div>
+      <div style="margin-top:10px;font-size:13px;font-weight:600;color:#0F172A;letter-spacing:0.5px;">LANGA INTELLIGENCE</div>
+    </div>
+    <div style="width:64px;height:64px;background:#EFF6FF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+    </div>
+    <h2 style="font-size:22px;font-weight:700;color:#0F172A;margin-bottom:10px;">Check your inbox</h2>
+    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:6px;">We sent a confirmation link to</p>
+    <p id="confirm-email-display" style="font-size:14px;font-weight:600;color:#0F172A;margin-bottom:20px;"></p>
+    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:28px;">Click the link in your email to activate your account. Check your spam folder if you don't see it.</p>
+    <div style="margin-top:8px;font-size:12px;color:var(--muted);">
+      Already confirmed? <a href="#" onclick="showLogin();return false;" style="color:var(--blue);font-weight:600;">Sign in →</a>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ APP ═══════════ -->
 <div id="page-app" class="hidden">
   <nav class="app-nav">
@@ -2337,7 +2357,7 @@ let processing = false;
 // NAVIGATION
 // ═══════════════════════════════════
 function showLanding() {
-  hide('page-login'); hide('page-app'); hide('page-signup'); hide('page-reset');
+  hide('page-login'); hide('page-app'); hide('page-signup'); hide('page-reset'); hide('page-confirm');
   show('page-landing');
   document.getElementById('app-footer').style.display = 'none';
   notifPanelOpen = false;
@@ -2345,12 +2365,12 @@ function showLanding() {
   if (panel) panel.classList.remove('open');
 }
 function showLogin() {
-  hide('page-landing'); hide('page-app'); hide('page-signup'); hide('page-reset');
+  hide('page-landing'); hide('page-app'); hide('page-signup'); hide('page-reset'); hide('page-confirm');
   show('page-login');
   document.getElementById('app-footer').style.display = 'none';
 }
 function showSignup() {
-  hide('page-landing'); hide('page-login'); hide('page-app'); hide('page-reset');
+  hide('page-landing'); hide('page-login'); hide('page-app'); hide('page-reset'); hide('page-confirm');
   show('page-signup');
   document.getElementById('app-footer').style.display = 'none';
   // Reset signup state
@@ -2358,9 +2378,15 @@ function showSignup() {
   selectedPlan = 'freemium';
   updateSignupUI();
 }
-
+function showConfirmPage(email) {
+  hide('page-landing'); hide('page-login'); hide('page-app'); hide('page-reset'); hide('page-signup');
+  var el = document.getElementById('confirm-email-display');
+  if (el) el.textContent = email || '';
+  show('page-confirm');
+  document.getElementById('app-footer').style.display = 'none';
+}
 function showApp() {
-  hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-reset');
+  hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-reset'); hide('page-confirm');
   show('page-app');
   document.getElementById('app-footer').style.display = 'flex';
   initApp();
@@ -4552,10 +4578,9 @@ async function completeSignup() {
       last_name: signupData.last,
     });
 
-    // Email confirmation required — send user to login and show a prompt
+    // Email confirmation required — show dedicated confirmation screen
     if (!result.access_token) {
-      showLogin();
-      toast('Check your email', 'We sent a confirmation link to ' + signupData.email + '. Click it to activate your account.', 'success', 8000);
+      showConfirmPage(signupData.email);
       return;
     }
 
