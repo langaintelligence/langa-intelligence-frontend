@@ -1809,8 +1809,15 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <div class="price-feature"><div class="pf-dot dot-yes"></div>Full dashboard</div>
         </div>
       </div>
-      <button class="btn btn-primary btn-full btn-lg" onclick="simulateUpgrade()">Start Pro — R49/month</button>
-      <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">Cancel anytime · No hidden fees · First month free</div>
+      <div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#92400E;margin-bottom:3px;">Payments coming soon</div>
+          <div style="font-size:12px;color:#B45309;line-height:1.5;">We're integrating secure payments. In the meantime, experience all Pro features completely free — no card needed.</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full btn-lg" id="trial-pro-btn" onclick="activateTrialPro()">Experience Pro Features Now →</button>
+      <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">No payment required · Full Pro access</div>
     </div>
   </div>
 </div>
@@ -4016,16 +4023,25 @@ function showMonthlyLimitModal() {
 function showUpgradeModal() { show('upgrade-overlay'); }
 function closeUpgrade() { hide('upgrade-overlay'); }
 function closeUpgradeIfBg(e) { if(e.target===document.getElementById('upgrade-overlay')) closeUpgrade(); }
-function simulateUpgrade() {
-  currentUser.plan = 'pro'; currentUser.maxDocs = planMaxDocs('pro');
-  userDocs = JSON.parse(JSON.stringify(BASE_DOCS_PRO));
-  document.getElementById('nav-plan').textContent = 'Pro';
-  document.getElementById('nav-plan').className = 'plan-chip plan-pro';
-  freeMessagesUsed = 0;
-  closeUpgrade();
-  renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
-  toast('Welcome to Langa!', 'AI chat, smart reminders and 50 documents unlocked.', 'success', 5000);
-  addNotification('success', 'Upgraded to Pro!', 'Unlimited AI chat and smart reminders are now active on all your contracts.', true);
+async function activateTrialPro() {
+  var btn = document.getElementById('trial-pro-btn');
+  setLoading(btn, true, 'Activating…');
+  try {
+    await api('POST', '/billing/change-plan', { plan: 'pro' });
+    currentUser.plan = 'pro';
+    currentUser.maxDocs = planMaxDocs('pro');
+    localStorage.setItem('langa_user', JSON.stringify(currentUser));
+    document.getElementById('nav-plan').textContent = 'Pro';
+    document.getElementById('nav-plan').className = 'plan-chip plan-pro';
+    closeUpgrade();
+    renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
+    toast('Welcome to Langa Pro!', 'Unlimited chat, smart reminders and 50 documents are now unlocked.', 'success', 6000);
+    addNotification('success', 'Welcome to Langa Pro!', 'Unlimited AI chat and smart reminders are now active on all your contracts.', true);
+  } catch(e) {
+    toast('Could not activate', apiErrMsg(e), 'warn');
+  } finally {
+    setLoading(btn, false, 'Experience Pro Features Now →');
+  }
 }
 // ══════════════════════════════════════════
 // BILLING MODAL
