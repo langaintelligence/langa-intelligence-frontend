@@ -2420,7 +2420,10 @@ async function doLogin() {
     userDocs = [];
     showApp();
   } catch(e) {
-    err.textContent = e.type === 'network' ? 'Unable to connect. Check your connection.' : 'Incorrect email or password.';
+    var errMsg = (e.message || '').toLowerCase();
+    err.textContent = e.type === 'network' ? 'Unable to connect. Check your connection.'
+      : errMsg.includes('confirm') || errMsg.includes('not confirmed') ? 'Please confirm your email address before signing in. Check your inbox for the confirmation link.'
+      : 'Incorrect email or password.';
     err.style.display = 'block';
   } finally {
     setLoading(btn, false, 'Sign in');
