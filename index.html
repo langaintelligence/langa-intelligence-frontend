@@ -916,6 +916,24 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 <body>
 
 <!-- ═══════════ LANDING PAGE ═══════════ -->
+<!-- Session restore cover — shown synchronously if stored session exists, prevents landing flash -->
+<div id="session-cover" style="display:none;position:fixed;inset:0;background:#0F172A;z-index:99999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;">LI</div>
+  <div style="display:flex;gap:6px;">
+    <span style="width:8px;height:8px;background:rgba(255,255,255,0.5);border-radius:50%;animation:bounce 1.1s ease-in-out infinite;"></span>
+    <span style="width:8px;height:8px;background:rgba(255,255,255,0.5);border-radius:50%;animation:bounce 1.1s ease-in-out infinite;animation-delay:.2s;"></span>
+    <span style="width:8px;height:8px;background:rgba(255,255,255,0.5);border-radius:50%;animation:bounce 1.1s ease-in-out infinite;animation-delay:.4s;"></span>
+  </div>
+</div>
+<script>
+  // Synchronous — runs before layout paint. If a session token is stored,
+  // show the cover so the landing page never flashes before session restore.
+  if (sessionStorage.getItem('lrt')) {
+    var c = document.getElementById('session-cover');
+    if (c) c.style.display = 'flex';
+  }
+</script>
+
 <div id="page-landing">
 
   <!-- NAV -->
@@ -4918,6 +4936,9 @@ function showLegalPage(page) {
 
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
+  var _cover = document.getElementById('session-cover');
+  function _hideCover() { if (_cover) _cover.style.display = 'none'; }
+
   // Check for password recovery link first (Supabase puts tokens in the URL hash)
   var hashStr = window.location.hash.substring(1);
   if (hashStr) {
@@ -4925,6 +4946,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (hashParams.get('type') === 'recovery' && hashParams.get('access_token')) {
       resetAccessToken = hashParams.get('access_token');
       history.replaceState(null, '', window.location.pathname);
+      _hideCover();
       showResetPage();
       return;
     }
@@ -4949,6 +4971,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           maxDocs: planMaxDocs(profile.plan),
         };
         localStorage.setItem('langa_user', JSON.stringify(currentUser));
+        _hideCover();
         showApp();
         return;
       } catch(_) {}
@@ -4958,6 +4981,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     refreshToken = null;
   }
 
+  _hideCover();
   showLanding();
 });
 </script>
