@@ -1523,7 +1523,10 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       <!-- REMINDERS -->
       <!-- REMINDERS -->
       <div id="view-reminders" class="hidden">
-        <div class="page-head"><div class="page-title">Reminders &amp; Alerts</div><div class="page-sub">Stay ahead of every deadline.</div></div>
+        <div class="page-head" style="display:flex;align-items:flex-start;justify-content:space-between;">
+          <div><div class="page-title">Reminders &amp; Alerts</div><div class="page-sub">Stay ahead of every deadline.</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="reloadReminders()" style="margin-top:6px;">↻ Refresh</button>
+        </div>
         <div id="reminders-list"></div>
       </div>
 
@@ -2978,16 +2981,15 @@ async function sendChat() {
       if (result.reminder_set && result.reminder) {
         var rem = result.reminder;
         var remDate = rem.remind_at ? new Date(rem.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'}) : '';
-        toast('Reminder set', (rem.title || 'Reminder') + (remDate ? ' — ' + remDate : ''), 'success', 5000);
-        // Refresh the Reminders tab so it shows immediately
-        renderReminders();
-        // Also update the doc card tag
+        // Push into local state FIRST, then render
         var docIdx = userDocs.findIndex(function(d){ return d.id === chatDocContext.id; });
         if (docIdx > -1) {
           userDocs[docIdx].reminders = userDocs[docIdx].reminders || [];
           userDocs[docIdx].reminders.push({ id: rem.id, title: rem.title, target_date: rem.remind_at, reminder_type: rem.reminder_type });
           renderDocs();
         }
+        renderReminders();
+        toast('Reminder set', (rem.title || 'Reminder') + (remDate ? ' — ' + remDate : ''), 'success', 5000);
       }
     } else {
       // Local fallback for demo / unauth
@@ -3528,6 +3530,23 @@ function guessType(ct) {
 // ═══════════════════════════════════
 // REMINDERS
 // ═══════════════════════════════════
+async function reloadReminders() {
+  if (!authToken) return;
+  var btn = document.querySelector('#view-reminders .btn-ghost');
+  if (btn) { btn.disabled = true; btn.textContent = '↻ Loading…'; }
+  try {
+    await Promise.all(userDocs.map(function(d) {
+      return api('GET', '/reminders/' + d.id)
+        .then(function(r){ d.reminders = r.reminders || []; })
+        .catch(function(){ });
+    }));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
+  }
+  renderReminders();
+  renderDocs();
+}
+
 function renderReminders() {
   var container = document.getElementById('reminders-list');
   var today = new Date(); today.setHours(0,0,0,0);
