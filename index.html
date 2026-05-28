@@ -2633,7 +2633,7 @@ function renderDocs() {
       ((d.reminders && d.reminders.length) ? '<div class="doc-reminder-tags">' +
         d.reminders.map(function(r){
           var label = r.title || r.reminder_type || 'Reminder';
-          var dateStr = r.target_date ? ' — ' + new Date(r.target_date + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'}) : '';
+          var dateStr = r.remind_at ? ' — ' + new Date(r.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'}) : '';
           return '<span class="doc-reminder-tag" onclick="event.stopPropagation();deleteDocReminder(\''+r.id+'\',\''+d.id+'\')">🔔 '+esc(label)+esc(dateStr)+'</span>';
         }).join('') + '</div>' : '') +
     '</div>';
@@ -2985,7 +2985,7 @@ async function sendChat() {
         var docIdx = userDocs.findIndex(function(d){ return d.id === chatDocContext.id; });
         if (docIdx > -1) {
           userDocs[docIdx].reminders = userDocs[docIdx].reminders || [];
-          userDocs[docIdx].reminders.push({ id: rem.id, title: rem.title, target_date: rem.remind_at, reminder_type: rem.reminder_type });
+          userDocs[docIdx].reminders.push({ id: rem.id, title: rem.title, remind_at: rem.remind_at, reminder_type: rem.reminder_type });
           renderDocs();
         }
         renderReminders();
@@ -3571,8 +3571,8 @@ function renderReminders() {
     }
 
     (d.reminders || []).forEach(function(r) {
-      var dateStr = r.target_date ? new Date(r.target_date + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}) : '';
-      var isPast = r.target_date && new Date(r.target_date + 'T00:00:00') < today;
+      var dateStr = r.remind_at ? new Date(r.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}) : '';
+      var isPast = r.remind_at && new Date(r.remind_at + 'T00:00:00') < today;
       var entry = {
         remId: r.id,
         docId: d.id,
