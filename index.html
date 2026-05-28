@@ -223,6 +223,9 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .dc-type{font-size:11px;color:var(--muted);margin-bottom:10px;}
 .dc-meta{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-bottom:12px;}
 .dc-insight{background:linear-gradient(135deg,var(--blue-l),var(--cyan-l));border-radius:var(--rs);padding:8px 10px;font-size:11px;color:var(--blue-d);line-height:1.4;}
+.doc-reminder-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
+.doc-reminder-tag{font-size:11px;background:var(--amber-l);color:#92400E;border-radius:99px;padding:3px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:1px solid #FDE68A;transition:opacity 0.15s;white-space:nowrap;}
+.doc-reminder-tag:hover{opacity:0.65;}
 .dc-actions{display:flex;gap:8px;margin-top:12px;}
 
 /* UPLOAD */
@@ -2218,6 +2221,7 @@ function apiDocToLocal(apiDoc, analysis) {
     cancelDeadline: apiDoc.cancel_deadline || null,
     renewalDate: apiDoc.renewal_date || null,
     is_analysed: !!apiDoc.is_analysed,
+    reminders: [],
     _fromApi: true,
   };
 }
@@ -2228,12 +2232,21 @@ async function loadUserDocuments() {
   try {
     var resp = await api('GET', '/documents');
     var docs = Array.isArray(resp) ? resp : (resp && Array.isArray(resp.documents) ? resp.documents : []);
-    // Load analyses in parallel for analysed documents
-    var analysisResults = await Promise.all(docs.map(function(d) {
-      if (d.is_analysed) return api('GET', '/analysis/' + d.id).catch(function() { return null; });
-      return Promise.resolve(null);
-    }));
-    userDocs = docs.map(function(d, i) { return apiDocToLocal(d, analysisResults[i]); });
+    // Load analyses and reminders in parallel
+    var [analysisResults, remindersResults] = await Promise.all([
+      Promise.all(docs.map(function(d) {
+        if (d.is_analysed) return api('GET', '/analysis/' + d.id).catch(function() { return null; });
+        return Promise.resolve(null);
+      })),
+      Promise.all(docs.map(function(d) {
+        return api('GET', '/reminders/' + d.id).catch(function() { return { reminders: [] }; });
+      })),
+    ]);
+    userDocs = docs.map(function(d, i) {
+      var local = apiDocToLocal(d, analysisResults[i]);
+      local.reminders = (remindersResults[i] && remindersResults[i].reminders) || [];
+      return local;
+    });
     renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
   } catch(e) {
     if (e.type === 'network' || e.type === 'server') toast('Error', 'Could not load documents. Please refresh.', 'warn');
@@ -2345,6 +2358,7 @@ function showApp() {
   show('page-app');
   document.getElementById('app-footer').style.display = 'flex';
   initApp();
+  startNotifPolling();
 }
 function showView(view) {
   ['dashboard','reminders','settings'].forEach(function(v){ hide('view-'+v); });
@@ -2417,6 +2431,8 @@ function doLogout() {
     }).catch(function(){});
   }
   authToken = null; refreshToken = null; currentUser = null; userDocs = []; pendingUploadFile = null;
+  notifications = [];
+  stopNotifPolling();
   localStorage.removeItem('langa_user');
   sessionStorage.removeItem('lrt');
   showLanding();
@@ -2611,6 +2627,12 @@ function renderDocs() {
       '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
       '<div class="dc-meta"><span>📅 Expires: '+new Date(d.expiryDate).toLocaleDateString('en-ZA')+'</span>'+(d.coverageAmount?'<span>💰 '+esc(d.coverageAmount)+'</span>':'')+'</div>' +
       (d.aiInsights[0]?'<div class="dc-insight">✨ '+esc(d.aiInsights[0])+'</div>':'') +
+      ((d.reminders && d.reminders.length) ? '<div class="doc-reminder-tags">' +
+        d.reminders.map(function(r){
+          var label = r.title || r.reminder_type || 'Reminder';
+          var dateStr = r.target_date ? ' — ' + new Date(r.target_date + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'}) : '';
+          return '<span class="doc-reminder-tag" onclick="event.stopPropagation();deleteDocReminder(\''+r.id+'\',\''+d.id+'\')">🔔 '+esc(label)+esc(dateStr)+'</span>';
+        }).join('') + '</div>' : '') +
     '</div>';
   }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📄</div><div style="font-size:15px;font-weight:600;color:var(--muted);margin-bottom:6px;">No documents found</div><div style="font-size:13px;color:var(--subtle);">Try adjusting your filters or search query</div></div>';
 }
@@ -2948,6 +2970,18 @@ async function sendChat() {
       var result = await api('POST', '/chat', { document_id: chatDocContext.id, question: msg });
       reply = result.answer;
       msgId = result.message_id;
+      // Handle reminder action
+      if (result.reminder_set && result.reminder) {
+        var rem = result.reminder;
+        var remDate = rem.remind_at ? new Date(rem.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'}) : '';
+        toast('Reminder set', (rem.title || 'Reminder') + (remDate ? ' — ' + remDate : ''), 'success', 5000);
+        var docIdx = userDocs.findIndex(function(d){ return d.id === chatDocContext.id; });
+        if (docIdx > -1) {
+          userDocs[docIdx].reminders = userDocs[docIdx].reminders || [];
+          userDocs[docIdx].reminders.push(rem);
+          renderDocs();
+        }
+      }
     } else {
       // Local fallback for demo / unauth
       await sleep(1200 + Math.random() * 800);
@@ -4467,6 +4501,7 @@ async function completeSignup() {
     show('page-app');
     document.getElementById('app-footer').style.display = 'flex';
     initApp();
+    startNotifPolling();
     await loadUserDocuments();
 
     setTimeout(function() {
@@ -4489,14 +4524,54 @@ async function completeSignup() {
 // IN-APP NOTIFICATION PANEL
 // ═══════════════════════════════════
 var notifications = [];
-
 var notifPanelOpen = false;
+var _notifPollInterval = null;
+
+function timeAgo(isoStr) {
+  if (!isoStr) return '';
+  var d = new Date(isoStr);
+  var diff = Math.floor((Date.now() - d) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+async function fetchNotifications() {
+  if (!authToken) return;
+  try {
+    var result = await api('GET', '/notifications');
+    notifications = (result.notifications || []).map(function(n) {
+      return {
+        id: n.id,
+        type: n.type || 'reminder',
+        title: n.title || 'Reminder',
+        msg: n.body || '',
+        time: timeAgo(n.created_at),
+        unread: !n.is_read,
+        docId: n.document_id || null,
+      };
+    });
+    updateNotifBadge();
+    if (notifPanelOpen) renderNotifications();
+  } catch(e) {}
+}
+
+function startNotifPolling() {
+  if (_notifPollInterval) return;
+  fetchNotifications();
+  _notifPollInterval = setInterval(fetchNotifications, 60000);
+}
+
+function stopNotifPolling() {
+  if (_notifPollInterval) { clearInterval(_notifPollInterval); _notifPollInterval = null; }
+}
 
 function toggleNotifPanel() {
   notifPanelOpen = !notifPanelOpen;
   var panel = document.getElementById('notif-panel');
   panel.classList.toggle('open', notifPanelOpen);
-  if (notifPanelOpen) renderNotifications();
+  if (notifPanelOpen) { fetchNotifications(); renderNotifications(); }
 }
 
 function renderNotifications() {
@@ -4516,7 +4591,7 @@ function renderNotifications() {
   };
 
   list.innerHTML = notifications.map(function(n) {
-    var cfg = typeConfig[n.type] || typeConfig.info;
+    var cfg = typeConfig[n.type] || typeConfig.reminder;
     return '<div class="notif-item' + (n.unread ? ' unread' : '') + '" onclick="handleNotifClick(\'' + n.id + '\',\'' + (n.docId||'') + '\')">' +
       '<div class="notif-icon-wrap" style="background:' + cfg.bg + '">' + cfg.icon + '</div>' +
       '<div class="notif-body">' +
@@ -4530,19 +4605,21 @@ function renderNotifications() {
   updateNotifBadge();
 }
 
-function handleNotifClick(id, docId) {
-  // Mark as read
+async function handleNotifClick(id, docId) {
   var n = notifications.find(function(n){ return n.id === id; });
-  if (n) n.unread = false;
-  renderNotifications();
-  // Open the relevant doc if exists
+  if (n && n.unread) {
+    n.unread = false;
+    renderNotifications();
+    try { await api('PATCH', '/notifications/' + id + '/read'); } catch(e) {}
+  }
   if (docId) {
     toggleNotifPanel();
     setTimeout(function(){ openDetail(docId); }, 300);
   }
 }
 
-function markAllRead() {
+async function markAllRead() {
+  try { await api('PATCH', '/notifications/read-all'); } catch(e) {}
   notifications.forEach(function(n){ n.unread = false; });
   renderNotifications();
   toast('All notifications marked as read', '', 'info', 2500);
@@ -4560,6 +4637,20 @@ function addNotification(type, title, msg, unread) {
   notifications.unshift({ id: 'n'+Date.now(), type: type, title: title, msg: msg, time: 'Just now', unread: !!unread });
   updateNotifBadge();
   if (notifPanelOpen) renderNotifications();
+}
+
+async function deleteDocReminder(reminderId, docId) {
+  try {
+    await api('DELETE', '/reminders/' + reminderId);
+    var doc = userDocs.find(function(d){ return d.id === docId; });
+    if (doc) {
+      doc.reminders = (doc.reminders || []).filter(function(r){ return r.id !== reminderId; });
+      renderDocs();
+    }
+    toast('Reminder deleted', '', 'success', 2000);
+  } catch(e) {
+    toast('Could not delete reminder', apiErrMsg(e), 'warn', 3000);
+  }
 }
 
 // ═══════════════════════════════════
