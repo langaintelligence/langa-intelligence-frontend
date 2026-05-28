@@ -2031,14 +2031,14 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Notification channels</div>
         <div class="notif-pref-grid">
-          <div class="notif-opt selected" id="notif-email-opt" onclick="toggleNotifOpt('notif-email-opt')">
+          <div class="notif-opt" id="notif-email-opt" onclick="toggleNotifOpt('notif-email-opt')">
             <div class="notif-opt-icon" style="background:#EFF6FF;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
             <div class="notif-opt-label">Email</div>
             <div class="notif-opt-desc">Deadline alerts to your inbox</div>
           </div>
-          <div class="notif-opt selected" id="notif-inapp-opt" onclick="toggleNotifOpt('notif-inapp-opt')">
+          <div class="notif-opt" id="notif-inapp-opt" onclick="toggleNotifOpt('notif-inapp-opt')">
             <div class="notif-opt-icon" style="background:#FEF3C7;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </div>
@@ -2064,10 +2064,13 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Remind me before deadlines</div>
         <div class="notif-freq-grid">
           <div class="freq-opt" id="freq-7" onclick="selectFreq('freq-7')">7 days</div>
-          <div class="freq-opt selected" id="freq-14" onclick="selectFreq('freq-14')">14 days</div>
+          <div class="freq-opt" id="freq-14" onclick="selectFreq('freq-14')">14 days</div>
           <div class="freq-opt" id="freq-30" onclick="selectFreq('freq-30')">30 days</div>
         </div>
 
+        <p style="font-size:12px;color:var(--muted);margin:12px 0 4px;text-align:center;">You can always change these once logged in.</p>
+
+        <div id="signup-error-3" class="login-error" style="display:none;margin-bottom:8px;"></div>
         <div style="display:flex;gap:10px;margin-top:4px;">
           <button class="btn btn-ghost" style="flex:1;" onclick="signupBack(3)">← Back</button>
           <button class="btn btn-primary" style="flex:2;" id="signup-submit-btn" onclick="completeSignup()">Create account →</button>
@@ -4534,48 +4537,46 @@ function selectFreq(id) {
 
 async function completeSignup() {
   var btn = document.getElementById('signup-submit-btn');
-  var errEl = document.getElementById('signup-error');
+  var errEl = document.getElementById('signup-error-3');
   if (errEl) errEl.style.display = 'none';
   setLoading(btn, true, 'Creating account...');
 
   try {
-    // Register via API
-    await api('POST', '/auth/register', {
+    var result = await api('POST', '/auth/register', {
       email: signupData.email,
       password: signupData.pass,
       first_name: signupData.first,
       last_name: signupData.last,
     });
 
-    // Auto-login with same credentials
-    var loginData = await api('POST', '/auth/login', {
-      email: signupData.email,
-      password: signupData.pass,
-    });
-    authToken = loginData.access_token;
+    // Email confirmation required — send user to login and show a prompt
+    if (!result.access_token) {
+      showLogin();
+      toast('Check your email', 'We sent a confirmation link to ' + signupData.email + '. Click it to activate your account.', 'success', 8000);
+      return;
+    }
 
+    // Auto-confirmed flow (confirmation disabled in Supabase)
+    authToken = result.access_token;
     var name = signupData.first + ' ' + signupData.last;
     currentUser = {
       email: signupData.email, name: name,
       plan: 'freemium', avatar: signupData.first.charAt(0).toUpperCase(), maxDocs: 2
     };
     userDocs = [];
-
     hide('page-signup');
     show('page-app');
     document.getElementById('app-footer').style.display = 'flex';
     initApp();
     startNotifPolling();
     await loadUserDocuments();
-
     setTimeout(function() {
-      addNotification('welcome', 'Welcome to Langa AI, ' + signupData.first + '!', 'Your account is ready. Upload your first contract to get started.', true);
       toast('Account created!', 'Welcome ' + signupData.first + ' — your dashboard is ready.', 'success', 5000);
     }, 600);
 
   } catch(e) {
     var msg = e.type === 'network' ? 'Unable to connect. Check your connection.'
-            : e.message && e.message.toLowerCase().includes('exist') ? 'An account with this email already exists.'
+            : (e.message || '').toLowerCase().includes('exist') ? 'An account with this email already exists.'
             : apiErrMsg(e);
     if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
     else toast('Registration failed', msg, 'warn');
