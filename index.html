@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+(function(){var d=localStorage.getItem('langa_dark_mode');if(d==='true'||( d===null&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Langa — Contract Intelligence</title>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAkUlEQVR42mNkQAL84lr/GegAPr68xghjM9HbcnS7mOhtObojGAfCcmTAxDDAYNQBow4YWg64d/0ow4cXVxnExUSwynNzczF8eHGV4e3TS6NRMOqAUQcMHQewkKPp5qWDGGJ6pm4Mb9+9H3ohMNogGXXAqANGHTDwDkDuKNIbfHx5jZEJvbdKT8tRooCejkC2CwD6XCz4I3pmQAAAAABJRU5ErkJggg==">
@@ -23,7 +26,12 @@
   --red:#DC2626;--red-l:#FEF2F2;--amber:#D97706;--amber-l:#FFFBEB;--green:#16A34A;--green-l:#F0FDF4;
   --r:12px;--rs:8px;--rx:16px;
 }
-body{font-family:Sora,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;}
+[data-theme="dark"]{
+  --navy:#F8FAFC;--ink:#F1F5F9;--body:#CBD5E1;--muted:#94A3B8;--subtle:#64748B;
+  --bg:#0F172A;--white:#1E293B;--bdr:#334155;--bdr2:#475569;
+  --blue-l:#172554;--cyan-l:#164E63;
+}
+body{font-family:Sora,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;transition:background-color 0.2s ease,color 0.2s ease;}
 
 /* ── LOGO SVG ── */
 .logo-svg{height:44px;width:auto;}
@@ -2001,6 +2009,14 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             </div>
 
             <div class="card">
+              <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bdr);">Appearance</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div><div style="font-size:13px;font-weight:500;">Dark mode</div><div style="font-size:11px;color:var(--muted);">Easy on the eyes</div></div>
+                <div class="toggle-switch" id="tog-dark" onclick="toggleDarkMode(!this.classList.contains('on'))"></div>
+              </div>
+            </div>
+
+            <div class="card">
               <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bdr);">Notification preferences</div>
               <div style="display:flex;flex-direction:column;gap:12px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -2597,6 +2613,37 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 // ═══════════════════════════════════
 // API CONFIG
 // ═══════════════════════════════════
+// ── DARK MODE ───────────────────────────────────────────────────────────────
+function applyTheme(dark) {
+  if (dark) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  var tog = document.getElementById('tog-dark');
+  if (tog) tog.classList.toggle('on', dark);
+}
+
+function initTheme() {
+  var saved = localStorage.getItem('langa_dark_mode');
+  if (saved !== null) { applyTheme(saved === 'true'); return; }
+  applyTheme(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
+function toggleDarkMode(enabled) {
+  applyTheme(enabled);
+  localStorage.setItem('langa_dark_mode', enabled);
+  if (authToken) {
+    fetch(API_BASE + '/auth/preferences', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+      body: JSON.stringify({ dark_mode: enabled })
+    }).catch(function(){});
+  }
+}
+
+initTheme();
+
 const API_BASE = 'https://langa-intelligence-production.up.railway.app';
 
 let authToken = null;
@@ -3039,6 +3086,10 @@ async function doLogin() {
         planEl.className = 'plan-chip ' + (currentUser.plan === 'pro' ? 'plan-pro' : 'plan-free');
         _syncAvatarMenuPlan(currentUser.plan === 'pro' ? 'Pro' : 'Freemium');
         document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
+        if (profile.dark_mode !== undefined) {
+          localStorage.setItem('langa_dark_mode', profile.dark_mode ? 'true' : 'false');
+          applyTheme(profile.dark_mode);
+        }
       }).catch(function(){}),
       loadUserDocuments(),
     ]);
