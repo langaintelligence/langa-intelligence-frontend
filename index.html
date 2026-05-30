@@ -3235,6 +3235,13 @@ function openDetail(id) {
         '<div><div class="dr-label">Expiry date</div><div class="dr-val">' + (fmtDate(doc.expiryDate) || '&mdash;') + '</div></div>' +
       '</div>';
   }
+  if (doc.is_analysed && !doc.cancelDeadline && !doc.renewalDate && !doc.expiryDate) {
+    summaryHTML +=
+      '<div style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+        '<span style="font-size:12px;color:var(--muted);">No dates found in last analysis</span>' +
+        '<a id="extract-dates-btn" href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="font-size:12px;font-weight:600;color:var(--blue);white-space:nowrap;text-decoration:none;">Extract dates &#8594;</a>' +
+      '</div>';
+  }
   document.getElementById('dm-summary').innerHTML = summaryHTML;
 
   // ── Clauses tab ──────────────────────────────────────────────────────────
@@ -3269,7 +3276,7 @@ function openDetail(id) {
       '<div class="detail-item"><div class="di-label">Provider</div><div class="di-val">' + esc(doc.provider || '&mdash;') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Document type</div><div class="di-val">' + esc(doc.type ? doc.type.charAt(0).toUpperCase() + doc.type.slice(1) : 'Contract') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Upload date</div><div class="di-val">' + (doc.uploadDate ? new Date(doc.uploadDate).toLocaleDateString('en-ZA') : 'Today') + '</div></div>' +
-      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (fmtDate(doc.expiryDate) || '&mdash;') + '</div></div>' +
+      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (fmtDate(doc.expiryDate) || (doc.is_analysed ? '<a href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;">Extract &#8594;</a>' : '&mdash;')) + '</div></div>' +
       (doc.coverageAmount ? '<div class="detail-item"><div class="di-label">Coverage amount</div><div class="di-val">' + esc(doc.coverageAmount) + '</div></div>' : '') +
     '</div>';
 
@@ -3312,6 +3319,38 @@ function closeDetail() {
   }
 }
 function closeDetailIfBg(e) { if(e.target===document.getElementById('detail-overlay')) closeDetail(); }
+
+async function refreshDates(docId) {
+  var btn = document.getElementById('extract-dates-btn') || document.querySelector('a[onclick*="refreshDates"]');
+  var origText = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = 'Extracting&#8230;'; btn.style.pointerEvents = 'none'; }
+  try {
+    var result = await api('POST', '/analysis/' + docId + '/refresh-dates');
+    var idx = userDocs.findIndex(function(d){ return d.id === docId; });
+    if (idx !== -1) {
+      var today = new Date();
+      if (result.expiry_date) userDocs[idx].expiryDate = result.expiry_date;
+      if (result.renewal_date) userDocs[idx].renewalDate = result.renewal_date;
+      if (result.cancel_deadline) userDocs[idx].cancelDeadline = result.cancel_deadline;
+      if (result.expiry_date && (userDocs[idx].status === 'active' || !userDocs[idx].status)) {
+        var daysLeft = Math.ceil((new Date(result.expiry_date + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
+        if (daysLeft < 0) userDocs[idx].status = 'expired';
+        else if (daysLeft < 90) userDocs[idx].status = 'expiring-soon';
+      }
+      currentDoc = userDocs[idx];
+    }
+    renderSidebar(); renderStats(); renderInsights(); renderDocs();
+    openDetail(docId);
+    if (result.expiry_date || result.renewal_date || result.cancel_deadline) {
+      toast('Dates extracted', 'Document dates have been updated.', 'success', 3500);
+    } else {
+      toast('No dates found', 'No specific dates could be extracted from this document.', 'info', 3500);
+    }
+  } catch(e) {
+    toast('Extraction failed', e.message || 'Could not extract dates.', 'error', 4000);
+    if (btn) { btn.innerHTML = origText; btn.style.pointerEvents = ''; }
+  }
+}
 
 function switchTab(id, el) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
