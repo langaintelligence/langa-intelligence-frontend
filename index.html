@@ -4148,98 +4148,126 @@ function renderReminders() {
   var container = document.getElementById('reminders-list');
   var today = new Date(); today.setHours(0,0,0,0);
 
-  // ── Auto-detected alerts from document date fields ───────────────────────
-  var urgent = [], medium = [], autoUpcoming = [];
-  // ── User-set reminders from chat, already loaded into userDocs.reminders ─
-  var scheduledUpcoming = [], scheduledPast = [];
+  function daysUntil(dateStr) {
+    if (!dateStr) return null;
+    var d = new Date(dateStr.indexOf('T') === -1 ? dateStr + 'T00:00:00' : dateStr);
+    return isNaN(d.getTime()) ? null : Math.ceil((d - today) / 86400000);
+  }
+
+  function classify(days) {
+    if (days === null) return 'scheduled';
+    if (days < 0)  return 'past';
+    if (days <= 7)  return 'urgent';
+    if (days <= 30) return 'due-soon';
+    if (days <= 90) return 'upcoming';
+    return 'scheduled';
+  }
+
+  var CFG = {
+    urgent:    { bar: 'var(--red)',   bg: 'var(--red-l)',   color: '#991B1B',     emoji: '🔴', label: 'Urgent' },
+    'due-soon':{ bar: 'var(--amber)', bg: 'var(--amber-l)', color: '#92400E',     emoji: '🟠', label: 'Due Soon' },
+    upcoming:  { bar: 'var(--blue)',  bg: 'var(--blue-l)',  color: '#1E40AF',     emoji: '🔵', label: 'Upcoming' },
+    scheduled: { bar: 'var(--green)', bg: 'var(--green-l)', color: '#14532D',     emoji: '🟢', label: 'Scheduled' },
+    past:      { bar: 'var(--bdr2)', bg: 'var(--bg)',      color: 'var(--muted)', emoji: '⚫', label: 'Past' },
+  };
+
+  var items = [];
 
   userDocs.forEach(function(d) {
     if (d.cancelDeadline) {
-      urgent.push({ docId: d.id, title: d.name + ' — cancellation deadline', desc: 'Submit written notice before ' + d.cancelDeadline + ' to avoid automatic renewal.', when: 'Urgent — act now', badgeBg: 'var(--red-l)', badgeColor: '#991B1B', barColor: 'var(--red)' });
+      var days = daysUntil(d.cancelDeadline);
+      items.push({ bucket: classify(days), days: days, remId: null, docId: d.id,
+        title: d.name + ' — cancellation deadline',
+        desc: 'Submit written notice before ' + (fmtDate(d.cancelDeadline) || d.cancelDeadline) + ' to avoid automatic renewal.',
+        dateStr: fmtDate(d.cancelDeadline) || d.cancelDeadline });
     }
     if (d.status === 'expired') {
-      urgent.push({ docId: d.id, title: d.name + ' — expired', desc: (d.aiInsights[0] || 'This document has expired.') + ' Renew or replace it urgently.', when: 'Overdue', badgeBg: 'var(--red-l)', badgeColor: '#991B1B', barColor: 'var(--red)' });
+      items.push({ bucket: 'past', days: -1, remId: null, docId: d.id,
+        title: d.name + ' — expired',
+        desc: ((d.aiInsights || [])[0] || 'This document has expired.') + ' Renew or replace it.',
+        dateStr: fmtDate(d.expiryDate) || 'Expired' });
     }
     if (d.status === 'expiring-soon' && !d.cancelDeadline) {
-      medium.push({ docId: d.id, title: d.name + ' — expiring soon', desc: 'Expires ' + (fmtDate(d.expiryDate) || 'soon') + '. Review renewal options now.', when: 'Within 90 days', badgeBg: 'var(--amber-l)', badgeColor: '#92400E', barColor: 'var(--amber)' });
+      var days = daysUntil(d.expiryDate);
+      items.push({ bucket: classify(days), days: days, remId: null, docId: d.id,
+        title: d.name + ' — expiring soon',
+        desc: 'Expires ' + (fmtDate(d.expiryDate) || 'soon') + '. Review renewal options now.',
+        dateStr: fmtDate(d.expiryDate) || 'Soon' });
     }
     if (d.renewalDate) {
-      autoUpcoming.push({ docId: d.id, title: d.name + ' — renewal date', desc: 'Auto-renews ' + d.renewalDate + '. Review terms before it renews.', when: 'Upcoming', badgeBg: 'var(--green-l)', badgeColor: '#14532D', barColor: 'var(--green)' });
+      var days = daysUntil(d.renewalDate);
+      items.push({ bucket: classify(days), days: days, remId: null, docId: d.id,
+        title: d.name + ' — renewal date',
+        desc: 'Auto-renews ' + (fmtDate(d.renewalDate) || d.renewalDate) + '. Review terms before it renews.',
+        dateStr: fmtDate(d.renewalDate) || d.renewalDate });
     }
-
     (d.reminders || []).forEach(function(r) {
-      var dateStr = r.remind_at ? new Date(r.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}) : '';
-      var isPast = r.remind_at && new Date(r.remind_at + 'T00:00:00') < today;
-      var entry = {
-        remId: r.id,
-        docId: d.id,
+      var days = daysUntil(r.remind_at);
+      items.push({ bucket: classify(days), days: days, remId: r.id, docId: d.id,
         title: r.title || r.reminder_type || 'Reminder',
-        docName: d.name,
-        dateStr: dateStr,
-        badgeBg: isPast ? 'var(--bg)' : 'var(--blue-l)',
-        badgeColor: isPast ? 'var(--muted)' : '#1E40AF',
-        barColor: isPast ? 'var(--bdr2)' : 'var(--blue)',
-      };
-      if (isPast) scheduledPast.push(entry); else scheduledUpcoming.push(entry);
+        desc: d.name,
+        dateStr: fmtDate(r.remind_at) || r.remind_at || 'No date' });
     });
   });
 
+  items.sort(function(a, b) {
+    var da = a.days === null ? 99999 : a.days < 0 ? 99998 : a.days;
+    var db = b.days === null ? 99999 : b.days < 0 ? 99998 : b.days;
+    return da - db;
+  });
+
+  var groups = { urgent: [], 'due-soon': [], upcoming: [], scheduled: [], past: [] };
+  items.forEach(function(item) { groups[item.bucket].push(item); });
+
+  var totalCount = items.length;
   var summaryHTML = '<div class="reminder-summary-bar">' +
-    '<div class="rsb-card"><div class="rsb-val c-red">' + urgent.length + '</div><div class="rsb-lbl">Urgent</div></div>' +
-    '<div class="rsb-card"><div class="rsb-val c-amber">' + medium.length + '</div><div class="rsb-lbl">Due soon</div></div>' +
-    '<div class="rsb-card"><div class="rsb-val c-blue">' + (autoUpcoming.length + scheduledUpcoming.length) + '</div><div class="rsb-lbl">Upcoming</div></div>' +
+    '<div class="rsb-card"><div class="rsb-val c-red">'   + groups.urgent.length    + '</div><div class="rsb-lbl">Urgent</div></div>' +
+    '<div class="rsb-card"><div class="rsb-val c-amber">' + groups['due-soon'].length + '</div><div class="rsb-lbl">Due soon</div></div>' +
+    '<div class="rsb-card"><div class="rsb-val c-blue">'  + (groups.upcoming.length + groups.scheduled.length) + '</div><div class="rsb-lbl">Upcoming</div></div>' +
   '</div>';
 
-  var hasAny = urgent.length || medium.length || autoUpcoming.length || scheduledUpcoming.length || scheduledPast.length;
-  if (!hasAny) {
-    container.innerHTML = summaryHTML +
+  if (!totalCount) {
+    container.innerHTML =
       '<div style="text-align:center;padding:60px 20px;color:var(--muted);">' +
         '<div style="font-size:48px;margin-bottom:14px;opacity:0.3;">🔔</div>' +
         '<div style="font-size:16px;font-weight:600;margin-bottom:6px;">No reminders set yet</div>' +
-        '<div style="font-size:13px;">Ask Langa in chat to set one! Try: <em>"Remind me to call them tomorrow"</em></div>' +
+        '<div style="font-size:13px;">Ask Langa in chat to set one! Try: <em>&ldquo;Remind me to call them tomorrow&rdquo;</em></div>' +
       '</div>';
     return;
   }
 
-  function buildAutoSection(items, label) {
-    if (!items.length) return '';
-    return '<div class="rem-section-head"><span class="rem-section-lbl">' + label + ' (' + items.length + ')</span></div>' +
-      items.map(function(r) {
-        return '<div class="reminder-card">' +
-          '<div class="rc-bar" style="background:' + r.barColor + '"></div>' +
-          '<div class="rc-body">' +
-            '<div class="rc-top"><div class="rc-title">' + esc(r.title) + '</div>' +
-            '<span class="rc-when-badge" style="background:' + r.badgeBg + ';color:' + r.badgeColor + '">' + esc(r.when) + '</span></div>' +
-            '<div class="rc-desc">' + esc(r.desc) + '</div>' +
-            '<div class="rc-footer"><span class="rc-doc-chip" data-docid="'+r.docId+'" onclick="openDetail(this.dataset.docid)">View document →</span></div>' +
-          '</div></div>';
-      }).join('');
+  function buildCard(r) {
+    var cfg = CFG[r.bucket];
+    var deleteBtn = r.remId
+      ? '<button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteScheduledReminder(\'' + r.remId + '\',\'' + r.docId + '\')">Delete</button>'
+      : '';
+    return '<div class="reminder-card">' +
+      '<div class="rc-bar" style="background:' + cfg.bar + '"></div>' +
+      '<div class="rc-body">' +
+        '<div class="rc-top">' +
+          '<div class="rc-title">' + (r.remId ? '🔔 ' : '') + esc(r.title) + '</div>' +
+          '<span class="rc-when-badge" style="background:' + cfg.bg + ';color:' + cfg.color + '">' + esc(r.dateStr) + '</span>' +
+        '</div>' +
+        '<div class="rc-desc">' + esc(r.desc) + '</div>' +
+        '<div class="rc-footer">' +
+          '<span class="rc-doc-chip" data-docid="' + r.docId + '" onclick="openDetail(this.dataset.docid)">View document →</span>' +
+          deleteBtn +
+        '</div>' +
+      '</div></div>';
   }
 
-  function buildScheduledSection(items, label) {
-    if (!items.length) return '';
-    return '<div class="rem-section-head"><span class="rem-section-lbl">' + label + ' (' + items.length + ')</span></div>' +
-      items.map(function(r) {
-        return '<div class="reminder-card">' +
-          '<div class="rc-bar" style="background:' + r.barColor + '"></div>' +
-          '<div class="rc-body">' +
-            '<div class="rc-top"><div class="rc-title">🔔 ' + esc(r.title) + '</div>' +
-            '<span class="rc-when-badge" style="background:' + r.badgeBg + ';color:' + r.badgeColor + '">' + esc(r.dateStr || 'No date') + '</span></div>' +
-            '<div class="rc-desc" style="color:var(--muted);font-size:12px;">' + esc(r.docName) + '</div>' +
-            '<div class="rc-footer">' +
-              '<span class="rc-doc-chip" data-docid="'+r.docId+'" onclick="openDetail(this.dataset.docid)">View document →</span>' +
-              '<button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteScheduledReminder(\''+r.remId+'\',\''+r.docId+'\')">Delete</button>' +
-            '</div>' +
-          '</div></div>';
-      }).join('');
+  function buildSection(list, cfg) {
+    if (!list.length) return '';
+    return '<div class="rem-section-head"><span class="rem-section-lbl">' + cfg.emoji + ' ' + cfg.label + ' (' + list.length + ')</span></div>' +
+      list.map(buildCard).join('');
   }
 
   container.innerHTML = summaryHTML +
-    buildAutoSection(urgent, '🔴 Urgent') +
-    buildAutoSection(medium, '🟡 Due soon') +
-    buildAutoSection(autoUpcoming, '🟢 Upcoming') +
-    buildScheduledSection(scheduledUpcoming, '🔵 Scheduled') +
-    buildScheduledSection(scheduledPast, '⚫ Past');
+    buildSection(groups.urgent,    CFG.urgent) +
+    buildSection(groups['due-soon'], CFG['due-soon']) +
+    buildSection(groups.upcoming,  CFG.upcoming) +
+    buildSection(groups.scheduled, CFG.scheduled) +
+    buildSection(groups.past,      CFG.past);
 }
 
 // ═══════════════════════════════════
@@ -5335,6 +5363,7 @@ async function deleteDocReminder(reminderId, docId) {
 }
 
 async function deleteScheduledReminder(reminderId, docId) {
+  if (!confirm('Remove this reminder?')) return;
   await deleteDocReminder(reminderId, docId);
   renderReminders();
 }
