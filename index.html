@@ -1864,7 +1864,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       <div class="s-item" onclick="showView('reminders')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         Reminders
-        <span class="s-badge" id="reminder-badge">2</span>
+        <span class="s-badge" id="reminder-badge" style="display:none;"></span>
       </div>
       <div class="s-item" onclick="showView('settings')">
         <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -2878,7 +2878,6 @@ function showView(view) {
 function _syncBnavDot() {
   var dot = document.getElementById('bnav-notif-dot');
   var topDot = document.getElementById('notif-bell-dot');
-  // topDot.style.display is always explicitly set by updateNotifBadge — safe to compare
   if (dot && topDot) dot.classList.toggle('visible', topDot.style.display === 'block');
 }
 
@@ -3080,13 +3079,32 @@ function renderSidebar() {
   }).join('');
 }
 
+function _countActiveReminders() {
+  var count = 0;
+  userDocs.forEach(function(d) {
+    if (d.cancelDeadline) count++;
+    if (d.status === 'expired') count++;
+    if (d.status === 'expiring-soon' && !d.cancelDeadline) count++;
+    if (d.renewalDate) count++;
+    count += (d.reminders || []).length;
+  });
+  return count;
+}
+
+function updateReminderBadge() {
+  var count = _countActiveReminders();
+  var badgeEl = document.getElementById('reminder-badge');
+  var dotEl = document.getElementById('bnav-rem-dot');
+  if (badgeEl) { badgeEl.textContent = count > 0 ? count : ''; badgeEl.style.display = count > 0 ? '' : 'none'; }
+  if (dotEl) dotEl.classList.toggle('visible', count > 0);
+}
+
 function renderStats() {
   document.getElementById('s-total').textContent = userDocs.length;
   document.getElementById('s-active').textContent = userDocs.filter(d=>d.status==='active').length;
   document.getElementById('s-expiring').textContent = userDocs.filter(d=>d.status==='expiring-soon').length;
   document.getElementById('s-expired').textContent = userDocs.filter(d=>d.status==='expired').length;
-  const urgentCount = userDocs.filter(d=>d.cancelDeadline||d.status==='expiring-soon'||d.status==='expired').length;
-  document.getElementById('reminder-badge').textContent = urgentCount;
+  updateReminderBadge();
 }
 
 function renderInsights() {
@@ -5356,6 +5374,7 @@ async function deleteDocReminder(reminderId, docId) {
       doc.reminders = (doc.reminders || []).filter(function(r){ return r.id !== reminderId; });
       renderDocs();
     }
+    updateReminderBadge();
     toast('Reminder deleted', '', 'success', 2000);
   } catch(e) {
     toast('Could not delete reminder', apiErrMsg(e), 'warn', 3000);
@@ -5854,12 +5873,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     Home
   </button>
   <button class="bnav-item" id="bnav-reminders" onclick="showView('reminders')">
+    <div class="bnav-dot" id="bnav-rem-dot"></div>
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     Reminders
   </button>
   <button class="bnav-item" id="bnav-notif" onclick="toggleNotifPanel()">
     <div class="bnav-dot" id="bnav-notif-dot"></div>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><circle cx="18" cy="6" r="4" fill="var(--red)" stroke="none"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     Alerts
   </button>
   <button class="bnav-item" id="bnav-settings" onclick="showView('settings')">
