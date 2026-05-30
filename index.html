@@ -2596,11 +2596,13 @@ function renderStats() {
 function renderInsights() {
   const insights = [];
   userDocs.forEach(d => {
-    if (d.cancelDeadline) insights.push({ color:'var(--red)', text: `<span class="ins-strong">Action needed:</span> ${d.name} — ${d.cancelDeadline} cancellation deadline approaching.` });
-    if (d.status==='expired') insights.push({ color:'var(--red)', text: `<span class="ins-strong">Expired:</span> ${d.name} — ${d.aiInsights[0]}` });
-    else if (d.status==='expiring-soon' && !d.cancelDeadline) insights.push({ color:'var(--amber)', text: `<span class="ins-strong">Expiring soon:</span> ${d.name} — ${d.aiInsights[0]}` });
-    else if (d.clauses && d.clauses.some(c=>c.severity==='high')) insights.push({ color:'var(--amber)', text: `<span class="ins-strong">Alert:</span> ${d.name} — ${d.aiInsights[0]}` });
-    else insights.push({ color:'var(--green)', text: `<span class="ins-strong">All good:</span> ${d.name} — ${d.aiInsights[0]}` });
+    const n = esc(d.name);
+    const ins = esc(d.aiInsights && d.aiInsights[0] ? d.aiInsights[0] : '');
+    if (d.cancelDeadline) insights.push({ color:'var(--red)', text: `<span class="ins-strong">Action needed:</span> ${n} — ${esc(d.cancelDeadline)} cancellation deadline approaching.` });
+    if (d.status==='expired') insights.push({ color:'var(--red)', text: `<span class="ins-strong">Expired:</span> ${n} — ${ins}` });
+    else if (d.status==='expiring-soon' && !d.cancelDeadline) insights.push({ color:'var(--amber)', text: `<span class="ins-strong">Expiring soon:</span> ${n} — ${ins}` });
+    else if (d.clauses && d.clauses.some(c=>c.severity==='high')) insights.push({ color:'var(--amber)', text: `<span class="ins-strong">Alert:</span> ${n} — ${ins}` });
+    else insights.push({ color:'var(--green)', text: `<span class="ins-strong">All good:</span> ${n} — ${ins}` });
   });
   document.getElementById('insights-list').innerHTML = insights.slice(0,4).map(i => `
     <div class="insight-row">
