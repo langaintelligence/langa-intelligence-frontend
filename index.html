@@ -8,6 +8,10 @@
 <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAkUlEQVR42mNkQAL84lr/GegAPr68xghjM9HbcnS7mOhtObojGAfCcmTAxDDAYNQBow4YWg64d/0ow4cXVxnExUSwynNzczF8eHGV4e3TS6NRMOqAUQcMHQewkKPp5qWDGGJ6pm4Mb9+9H3ohMNogGXXAqANGHTDwDkDuKNIbfHx5jZEJvbdKT8tRooCejkC2CwD6XCz4I3pmQAAAAABJRU5ErkJggg==">
 <link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAACjElEQVR42u3ZIVJCURiG4XPOUIXIHmg2g81iNhidcQlkAmOwWAhWF+QClBktOpqIrAA34OAF5HLPz/NkZtA773z+YE4tGAxHq8TRWy7med/vkQVMpMCzkIkUdhYxkeIuYqZLdm0qC5lIa13ETKS1LmImUtRFzESKuoiZSFEXMRMp6iJmIkVdxEykqIuYiRR18WiIpFhnIq10ETORonZyEPvkgBBBOzeIcHZYaOIttHUmykpbaHwoBEFDC7L7GQsNggZBg6ARNAgaBA2CBkEjaBA0CBoEDYJG0CBoEDQIGgSNoEHQIGgQNAgaQYOgQdAgaBA0ggZBg6BhW71j/KW/3p9Tv3/S6LV397M0e3zqzM8+e5im25vrRq99eX1L5xdXFhoEDYIGQYOgETQIGgQNggZBI2gQNAgaBA2CRtAgaBA0CBoEjaBB0CBoEDSCBkGDoEHQIGgEDYIGQYOgQdAIGgQNggZBg6ARNAgaBA2CBkEjaBA0HEzPI1hvOhmn6WTc2vt9fH6n07NLD95Cg6ARNAgaBA2CRtAgaBA07FceDEcrjwELDYIGQYOgETQIGgQNggZBI2gQNAgaBA2CRtAgaBA0CBoEjaBB0CBoEDQIGkGDoEHQIGgQNIIGQYOgQdAI2iNA0CBoEDQIGkFDjKCXi3n2GIhguZhnC42TAwQNbQXtjibC/WyhiXtyWGlqX2cLjQ+FUE3Qzg5qPjd+XWhRU2vMTg6O44a20tS4zmsXWtTUFvOfJ4eoqSnmRje0qKkl5sYfCkVNDTFv9C2HqOl6zBt/bSdquhzzVt9Di5quxpxSSjvFORiOVh47XQj5X/5TaK3pUsw7L7TFpgsR7y1oYXPov/CtnAwCp60T9QfhuaeL8GIEIgAAAABJRU5ErkJggg==">
 <meta name="theme-color" content="#2563EB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Langa">
+<link rel="manifest" href="/manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -1311,9 +1315,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
   </div>
 </div>
 <script>
-  // Synchronous — runs before layout paint. If a session token is stored,
-  // show the cover so the landing page never flashes before session restore.
-  if (sessionStorage.getItem('lrt')) {
+  // Runs synchronously before first paint — determines standalone mode once for
+  // the entire session and shows the splash cover if a token exists anywhere.
+  var _isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (sessionStorage.getItem('lrt') || (_isStandalone && localStorage.getItem('lrt'))) {
     var c = document.getElementById('session-cover');
     if (c) c.style.display = 'flex';
   }
@@ -2517,6 +2523,22 @@ const API_BASE = 'https://langa-intelligence-production.up.railway.app';
 let authToken = null;
 let refreshToken = null;
 
+// In standalone PWA mode (added to home screen), sessionStorage is wiped when iOS
+// terminates the app. Use localStorage as the backing store so the session survives
+// restarts. In a normal browser tab, sessionStorage-only is correct security behaviour.
+var _RT_KEY = 'lrt';
+function _saveRT(token) {
+  sessionStorage.setItem(_RT_KEY, token);
+  if (_isStandalone) localStorage.setItem(_RT_KEY, token);
+}
+function _loadRT() {
+  return sessionStorage.getItem(_RT_KEY) || (_isStandalone ? localStorage.getItem(_RT_KEY) : null);
+}
+function _clearRT() {
+  sessionStorage.removeItem(_RT_KEY);
+  localStorage.removeItem(_RT_KEY);
+}
+
 // ── History API ───────────────────────────────────────────────────────────────
 var _historyNav = false; // true while handling popstate — prevents re-pushing state
 
@@ -2654,7 +2676,7 @@ async function _tryRefresh() {
     var data = await res.json();
     authToken = data.access_token;
     refreshToken = data.refresh_token;
-    if (refreshToken) sessionStorage.setItem('lrt', refreshToken);
+    if (refreshToken) _saveRT(refreshToken);
     return true;
   } catch(e) { return false; }
 }
@@ -2911,7 +2933,7 @@ async function doLogin() {
     var data = await api('POST', '/auth/login', { email: email, password: pass });
     authToken = data.access_token;
     refreshToken = data.refresh_token || null;
-    if (refreshToken) sessionStorage.setItem('lrt', refreshToken);
+    if (refreshToken) _saveRT(refreshToken);
     // Use first_name from login response; fall back to email-derived guess while /auth/me loads
     var initialName = (data.first_name && data.first_name.trim())
       ? data.first_name.trim()
@@ -2962,7 +2984,7 @@ function doLogout() {
   notifications = [];
   stopNotifPolling();
   localStorage.removeItem('langa_user');
-  sessionStorage.removeItem('lrt');
+  _clearRT();
   showLanding();
 }
 
@@ -5835,8 +5857,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Capture deep-link hash before session restoration overwrites it
   var _bootHash = window.location.hash.replace('#', '');
 
-  // Restore session from stored refresh token (survives page refresh, cleared on tab close)
-  var storedRefresh = sessionStorage.getItem('lrt');
+  // Restore session — sessionStorage for browser tabs, localStorage for standalone PWA
+  var storedRefresh = _loadRT();
   if (storedRefresh) {
     refreshToken = storedRefresh;
     var restored = await _tryRefresh();
@@ -5878,13 +5900,14 @@ document.addEventListener('DOMContentLoaded', async function() {
       ]);
       return;
     }
-    // Refresh failed — clear stale token and show landing
-    sessionStorage.removeItem('lrt');
+    // Refresh failed — clear stale token
+    _clearRT();
     refreshToken = null;
   }
 
   _hideCover();
-  showLanding();
+  // In standalone mode skip the marketing landing page — go straight to sign in
+  if (_isStandalone) { showLogin(); } else { showLanding(); }
 });
 </script>
 
