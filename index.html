@@ -2517,6 +2517,68 @@ const API_BASE = 'https://langa-intelligence-production.up.railway.app';
 let authToken = null;
 let refreshToken = null;
 
+// ── History API ───────────────────────────────────────────────────────────────
+var _historyNav = false; // true while handling popstate — prevents re-pushing state
+
+function _navPush(state, hash) {
+  if (_historyNav) return;
+  history.pushState(state, '', hash ? '#' + hash : window.location.pathname);
+}
+function _navReplace(state, hash) {
+  history.replaceState(state, '', hash ? '#' + hash : window.location.pathname);
+}
+function _showAppShell() {
+  hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-reset'); hide('page-confirm');
+  show('page-app');
+  document.getElementById('app-footer').style.display = 'flex';
+  var bnav = document.getElementById('mobile-bottom-nav');
+  if (bnav && window.innerWidth <= 768) bnav.style.display = 'flex';
+}
+
+window.addEventListener('popstate', function(e) {
+  var state = e.state;
+  _historyNav = true;
+  try {
+    if (!state || state.screen === 'landing') {
+      if (authToken) {
+        _navReplace({ screen: 'app', view: 'dashboard' }, 'dashboard');
+        _showAppShell(); showView('dashboard');
+      } else {
+        showLanding();
+      }
+    } else if (state.screen === 'login') {
+      if (authToken) {
+        _navReplace({ screen: 'app', view: 'dashboard' }, 'dashboard');
+        _showAppShell(); showView('dashboard');
+      } else {
+        showLogin();
+      }
+    } else if (state.screen === 'signup') {
+      showSignup();
+      signupStep = state.step || 1;
+      selectedPlan = state.plan || selectedPlan || 'freemium';
+      updateSignupUI();
+    } else if (state.screen === 'app') {
+      if (!authToken) { showLanding(); }
+      else { _showAppShell(); hide('detail-overlay'); hide('chat-overlay'); showView(state.view || 'dashboard'); }
+    } else if (state.screen === 'detail') {
+      if (!authToken) { showLanding(); }
+      else { _showAppShell(); hide('chat-overlay'); if (state.id) openDetail(state.id); }
+    } else if (state.screen === 'chat') {
+      if (!authToken) { showLanding(); }
+      else {
+        _showAppShell();
+        if (state.id) {
+          var _doc = userDocs.find(function(d){ return d.id === state.id; });
+          if (_doc) openChat(_doc);
+        }
+      }
+    }
+  } finally {
+    _historyNav = false;
+  }
+});
+
 // Holds the actual File object selected for upload
 let pendingUploadFile = null;
 
@@ -2740,6 +2802,7 @@ function showLanding() {
   notifPanelOpen = false;
   var panel = document.getElementById('notif-panel');
   if (panel) panel.classList.remove('open');
+  _navPush({ screen: 'landing' }, '');
 }
 function showLogin() {
   hide('page-landing'); hide('page-app'); hide('page-signup'); hide('page-reset'); hide('page-confirm');
@@ -2747,6 +2810,7 @@ function showLogin() {
   document.getElementById('app-footer').style.display = 'none';
   var bnav = document.getElementById('mobile-bottom-nav');
   if (bnav) bnav.style.display = 'none';
+  _navPush({ screen: 'login' }, 'login');
 }
 function showSignup() {
   hide('page-landing'); hide('page-login'); hide('page-app'); hide('page-reset'); hide('page-confirm');
@@ -2754,10 +2818,12 @@ function showSignup() {
   document.getElementById('app-footer').style.display = 'none';
   var bnav = document.getElementById('mobile-bottom-nav');
   if (bnav) bnav.style.display = 'none';
-  // Reset signup state
-  signupStep = 1;
-  selectedPlan = 'freemium';
-  updateSignupUI();
+  if (!_historyNav) {
+    signupStep = 1;
+    selectedPlan = 'freemium';
+    updateSignupUI();
+    _navPush({ screen: 'signup', step: 1 }, 'signup');
+  }
 }
 function showConfirmPage(email) {
   hide('page-landing'); hide('page-login'); hide('page-app'); hide('page-reset'); hide('page-signup');
@@ -2770,9 +2836,9 @@ function showApp() {
   hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-reset'); hide('page-confirm');
   show('page-app');
   document.getElementById('app-footer').style.display = 'flex';
-  // Show bottom nav only on mobile
   var bnav = document.getElementById('mobile-bottom-nav');
   if (bnav && window.innerWidth <= 768) bnav.style.display = 'flex';
+  _navReplace({ screen: 'app', view: 'dashboard' }, 'dashboard');
   initApp();
   startNotifPolling();
 }
@@ -2785,13 +2851,19 @@ function showView(view) {
       item.classList.add('active');
     }
   });
-  // Sync bottom nav active state
   ['dashboard','reminders','settings'].forEach(function(v){
     var btn = document.getElementById('bnav-' + v);
     if (btn) btn.classList.toggle('active', v === view);
   });
   if (view === 'reminders') renderReminders();
   if (view === 'settings') initSettings();
+  if (!_historyNav) {
+    if (view === 'dashboard') {
+      _navReplace({ screen: 'app', view: 'dashboard' }, 'dashboard');
+    } else {
+      _navPush({ screen: 'app', view: view }, view);
+    }
+  }
 }
 
 function _syncBnavDot() {
@@ -3205,11 +3277,18 @@ function openDetail(id) {
 
   updateDetailChatButton();
   show('detail-overlay');
+  if (!_historyNav) _navPush({ screen: 'detail', id: id }, 'detail/' + id);
 }
 
 
 
-function closeDetail() { hide('detail-overlay'); }
+function closeDetail() {
+  if (history.state && history.state.screen === 'detail') {
+    history.back();
+  } else {
+    hide('detail-overlay');
+  }
+}
 function closeDetailIfBg(e) { if(e.target===document.getElementById('detail-overlay')) closeDetail(); }
 
 function switchTab(id, el) {
@@ -3224,8 +3303,7 @@ function switchTab(id, el) {
 // ═══════════════════════════════════
 function openChatFromDetail() {
   chatDocContext = currentDoc;
-  closeDetail();
-  openChat(currentDoc);
+  openChat(currentDoc); // detail stays open underneath; back from chat returns to detail
 }
 
 async function reanalyseDoc() {
@@ -3291,6 +3369,7 @@ async function openChat(doc) {
   msgs.innerHTML = '<div class="chat-loading"><div class="chat-loading-dots"><span></span><span></span><span></span></div><div style="font-size:12px;color:rgba(255,255,255,0.45);">Loading conversation…</div></div>';
   document.getElementById('chat-suggestions').innerHTML = '';
   show('chat-overlay');
+  if (!_historyNav) _navPush({ screen: 'chat', id: doc.id }, 'chat/' + doc.id);
 
   // Fetch history in background, then render everything at once
   if (authToken && doc._fromApi) {
@@ -3398,7 +3477,13 @@ function showReminderGate() {
 }
 
 
-function closeChat() { hide('chat-overlay'); }
+function closeChat() {
+  if (history.state && history.state.screen === 'chat') {
+    history.back();
+  } else {
+    hide('chat-overlay');
+  }
+}
 
 function sendSuggest(q) {
   document.getElementById('chat-input').value = q;
@@ -4963,11 +5048,11 @@ function signupNext(fromStep) {
   }
   signupStep++;
   updateSignupUI();
+  _navPush({ screen: 'signup', step: signupStep, plan: selectedPlan }, 'signup/' + signupStep);
 }
 
 function signupBack(fromStep) {
-  signupStep--;
-  updateSignupUI();
+  history.back();
 }
 
 function showSignupErr(msg) {
@@ -5595,7 +5680,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
 
+  // Set an initial history state so popstate always has something to read on first back
+  if (!history.state) {
+    history.replaceState({ screen: '_init' }, '', window.location.href);
+  }
+
   localStorage.removeItem('langa_token'); // clean up legacy key
+
+  // Capture deep-link hash before session restoration overwrites it
+  var _bootHash = window.location.hash.replace('#', '');
 
   // Restore session from stored refresh token (survives page refresh, cleared on tab close)
   var storedRefresh = sessionStorage.getItem('lrt');
@@ -5603,13 +5696,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     refreshToken = storedRefresh;
     var restored = await _tryRefresh();
     if (restored) {
-      // Use cached user to show app immediately, then refresh profile in background
       var cached = null;
       try { cached = JSON.parse(localStorage.getItem('langa_user')); } catch(_) {}
       currentUser = cached || { email: '', name: 'Loading…', avatar: '…', plan: 'freemium', maxDocs: 2 };
       userDocs = [];
       _hideCover();
       showApp();
+      // Resolve deep-link hash after docs load
+      var _docsPromise = loadUserDocuments().then(function() {
+        if (_bootHash === 'reminders') { showView('reminders'); }
+        else if (_bootHash === 'settings') { showView('settings'); }
+        else if (_bootHash && _bootHash.startsWith('detail/')) {
+          var _deepId = _bootHash.split('/')[1];
+          if (_deepId) openDetail(_deepId);
+        }
+      });
       Promise.all([
         api('GET', '/auth/me').then(function(profile) {
           var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
@@ -5628,7 +5729,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           planEl.className = 'plan-chip ' + (currentUser.plan === 'pro' ? 'plan-pro' : 'plan-free');
           document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
         }).catch(function(){}),
-        loadUserDocuments(),
+        _docsPromise,
       ]);
       return;
     }
