@@ -2662,18 +2662,25 @@ async function _tryRefresh() {
 // ── Map API doc + optional analysis → local doc format ───────────────────────
 function apiDocToLocal(apiDoc, analysis) {
   var today = new Date();
-  var fallbackExpiry = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()).toISOString().split('T')[0];
   var uploadDate = apiDoc.created_at ? apiDoc.created_at.split('T')[0] : today.toISOString().split('T')[0];
   var risk = analysis ? analysis.risk_level : null;
   var riskLabel = analysis ? analysis.risk_label : (apiDoc.is_analysed ? 'Analysed' : 'Not analysed');
+  // Calculate status client-side so 'expiring-soon' is set correctly
+  var expiryDate = apiDoc.expiry_date || null;
+  var status = apiDoc.status || 'active';
+  if (expiryDate && (status === 'active' || status == null)) {
+    var daysLeft = Math.ceil((new Date(expiryDate + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 0) status = 'expired';
+    else if (daysLeft < 90) status = 'expiring-soon';
+  }
   return {
     id: apiDoc.id,
     name: apiDoc.name,
     type: apiDoc.type || 'contract',
     provider: apiDoc.provider || null,
     uploadDate: uploadDate,
-    expiryDate: apiDoc.expiry_date || null,
-    status: (apiDoc.status === 'active' || apiDoc.status == null) ? 'active' : 'expired',
+    expiryDate: expiryDate,
+    status: status,
     coverageAmount: null,
     keyTerms: analysis ? (analysis.key_terms || []) : [],
     aiInsights: analysis ? (analysis.ai_insights || []) : [],
@@ -2875,6 +2882,16 @@ function _syncBnavDot() {
 }
 
 function filterDocs() { renderDocs(); }
+
+// Safe date formatter — accepts YYYY-MM-DD strings (or null/undefined).
+// Appends T00:00:00 so the string is parsed as LOCAL time (not UTC midnight),
+// preventing off-by-one on any timezone. Returns null for missing/invalid input.
+function fmtDate(d, opts) {
+  if (!d) return null;
+  var dt = new Date(d.indexOf('T') === -1 ? d + 'T00:00:00' : d);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toLocaleDateString('en-ZA', opts || { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
@@ -3140,7 +3157,7 @@ function renderDocs() {
       '</div>' +
       '<div class="dc-name">'+esc(d.name)+'</div>' +
       '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
-      '<div class="dc-meta"><span>📅 Expires: '+new Date(d.expiryDate).toLocaleDateString('en-ZA')+'</span>'+(d.coverageAmount?'<span>💰 '+esc(d.coverageAmount)+'</span>':'')+'</div>' +
+      '<div class="dc-meta">'+(d.expiryDate?'<span>📅 Expires: '+fmtDate(d.expiryDate,{day:'numeric',month:'short',year:'numeric'})+'</span>':'<span style="color:var(--subtle)">📅 No expiry date</span>')+(d.coverageAmount?'<span>💰 '+esc(d.coverageAmount)+'</span>':'')+'</div>' +
       (d.aiInsights[0]?'<div class="dc-insight">✨ '+esc(d.aiInsights[0])+'</div>':'') +
       ((d.reminders && d.reminders.length) ? '<div class="doc-reminder-tags">' +
         d.reminders.map(function(r){
@@ -3214,7 +3231,7 @@ function openDetail(id) {
     summaryHTML +=
       '<div class="date-row">' +
         '<div class="dr-icon" style="background:var(--blue-l)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.75" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
-        '<div><div class="dr-label">Expiry date</div><div class="dr-val">' + new Date(doc.expiryDate).toLocaleDateString('en-ZA', {day:'numeric',month:'long',year:'numeric'}) + '</div></div>' +
+        '<div><div class="dr-label">Expiry date</div><div class="dr-val">' + (fmtDate(doc.expiryDate) || '&mdash;') + '</div></div>' +
       '</div>';
   }
   document.getElementById('dm-summary').innerHTML = summaryHTML;
@@ -3251,7 +3268,7 @@ function openDetail(id) {
       '<div class="detail-item"><div class="di-label">Provider</div><div class="di-val">' + esc(doc.provider || '&mdash;') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Document type</div><div class="di-val">' + esc(doc.type ? doc.type.charAt(0).toUpperCase() + doc.type.slice(1) : 'Contract') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Upload date</div><div class="di-val">' + (doc.uploadDate ? new Date(doc.uploadDate).toLocaleDateString('en-ZA') : 'Today') + '</div></div>' +
-      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString('en-ZA') : '&mdash;') + '</div></div>' +
+      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (fmtDate(doc.expiryDate) || '&mdash;') + '</div></div>' +
       (doc.coverageAmount ? '<div class="detail-item"><div class="di-label">Coverage amount</div><div class="di-val">' + esc(doc.coverageAmount) + '</div></div>' : '') +
     '</div>';
 
@@ -4104,7 +4121,7 @@ function renderReminders() {
       urgent.push({ docId: d.id, title: d.name + ' — expired', desc: (d.aiInsights[0] || 'This document has expired.') + ' Renew or replace it urgently.', when: 'Overdue', badgeBg: 'var(--red-l)', badgeColor: '#991B1B', barColor: 'var(--red)' });
     }
     if (d.status === 'expiring-soon' && !d.cancelDeadline) {
-      medium.push({ docId: d.id, title: d.name + ' — expiring soon', desc: 'Expires ' + new Date(d.expiryDate + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}) + '. Review renewal options now.', when: 'Within 90 days', badgeBg: 'var(--amber-l)', badgeColor: '#92400E', barColor: 'var(--amber)' });
+      medium.push({ docId: d.id, title: d.name + ' — expiring soon', desc: 'Expires ' + (fmtDate(d.expiryDate) || 'soon') + '. Review renewal options now.', when: 'Within 90 days', badgeBg: 'var(--amber-l)', badgeColor: '#92400E', barColor: 'var(--amber)' });
     }
     if (d.renewalDate) {
       autoUpcoming.push({ docId: d.id, title: d.name + ' — renewal date', desc: 'Auto-renews ' + d.renewalDate + '. Review terms before it renews.', when: 'Upcoming', badgeBg: 'var(--green-l)', badgeColor: '#14532D', barColor: 'var(--green)' });
@@ -4215,7 +4232,7 @@ function openViewer(doc) {
     if (doc.provider) displayText += 'Provider: ' + doc.provider + NL;
     displayText += 'Type: ' + (doc.type ? doc.type.charAt(0).toUpperCase()+doc.type.slice(1) : 'Contract') + NL;
     displayText += 'Uploaded: ' + (doc.uploadDate ? new Date(doc.uploadDate).toLocaleDateString('en-ZA') : 'Today') + NL;
-    displayText += 'Expires: ' + (doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString('en-ZA') : 'Not specified') + NL;
+    displayText += 'Expires: ' + (fmtDate(doc.expiryDate) || 'Not specified') + NL;
     if (doc.coverageAmount) displayText += 'Coverage: ' + doc.coverageAmount + NL;
     displayText += NL + HR + NL + NL + 'KEY TERMS' + NL + NL;
     (doc.keyTerms || []).forEach(function(t,i){ displayText += (i+1)+'. '+t+NL; });
@@ -4608,7 +4625,7 @@ function renderBillingOverview() {
 
   document.getElementById('bill-price').innerHTML = (isPro ? 'R' + s.price_zar : 'R0') + '<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span>';
   document.getElementById('bill-billing-desc').textContent = s.billing_description || (isPro ? 'Billed monthly' : 'Free forever');
-  document.getElementById('bill-next-date').textContent = s.next_billing_date ? new Date(s.next_billing_date).toLocaleDateString('en-ZA', {day:'numeric',month:'long',year:'numeric'}) : '—';
+  document.getElementById('bill-next-date').textContent = fmtDate(s.next_billing_date) || '—';
 
   var maxDocs = currentUser.maxDocs || planMaxDocs(currentUser.plan);
   var used = userDocs ? userDocs.length : 0;
@@ -4796,9 +4813,10 @@ function _renderReminderModal() {
   var doc = currentDoc;
   var today = new Date(); today.setHours(0,0,0,0);
   var opts = [];
-  if (doc.expiryDate && new Date(doc.expiryDate) > today)       opts.push('expiry');
-  if (doc.renewalDate && new Date(doc.renewalDate) > today)     opts.push('renewal');
-  if (doc.cancelDeadline && new Date(doc.cancelDeadline) > today) opts.push('cancel_deadline');
+  var _dtOf = function(s){ if (!s) return null; var d2 = new Date(s.indexOf('T')===-1?s+'T00:00:00':s); return isNaN(d2.getTime())?null:d2; };
+  if (doc.expiryDate   && _dtOf(doc.expiryDate)   > today) opts.push('expiry');
+  if (doc.renewalDate  && _dtOf(doc.renewalDate)  > today) opts.push('renewal');
+  if (doc.cancelDeadline && _dtOf(doc.cancelDeadline) > today) opts.push('cancel_deadline');
 
   var emailOn = (document.getElementById('tog-email') || {}).classList && document.getElementById('tog-email').classList.contains('on');
   var body = document.getElementById('reminder-body');
@@ -4960,7 +4978,7 @@ function localChatReply(question, doc) {
   const penalty = d.clauses?.find(c => c.type === 'penalty');
   const autoRenew = d.clauses?.find(c => c.type === 'auto_renewal');
   const dataShare = d.clauses?.find(c => c.type === 'data_sharing');
-  const expDate = d.expiryDate ? new Date(d.expiryDate).toLocaleDateString('en-ZA', {day:'numeric',month:'long',year:'numeric'}) : null;
+  const expDate = fmtDate(d.expiryDate);
 
   if (/cancel|exit|terminate|leave|get out/i.test(q)) {
     if (penalty) return `Based on your ${d.name}: ${penalty.plain}${penalty.impact ? ' Financial impact: ' + penalty.impact + '.' : ''} ${d.cancelDeadline ? 'Note: you must submit written notice by ' + d.cancelDeadline + ' to avoid auto-renewal.' : ''} I'd recommend getting this in writing before you cancel anything.`;
