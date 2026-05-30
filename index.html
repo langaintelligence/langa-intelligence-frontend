@@ -147,6 +147,12 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 #page-app{display:grid;grid-template-rows:56px 1fr;min-height:100vh;}
 .app-nav{background:var(--white);border-bottom:1px solid var(--bdr);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
 .app-nav-left{display:flex;align-items:center;gap:16px;}
+.avatar-menu-wrap{position:relative;}
+.avatar-menu{display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:168px;background:var(--white);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;overflow:hidden;}
+.avatar-menu-plan{padding:11px 16px;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--bdr);cursor:default;letter-spacing:0.3px;}
+.avatar-menu-item{display:block;width:100%;padding:12px 16px;text-align:left;background:none;border:none;font-size:14px;font-weight:500;color:var(--navy);cursor:pointer;transition:background 0.1s;}
+.avatar-menu-item:hover{background:var(--bg);}
+.avatar-menu-item.danger{color:var(--red);}
 .user-chip{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bdr);border-radius:999px;padding:5px 12px 5px 5px;}
 .user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;}
 .user-name{font-size:12px;font-weight:600;color:var(--ink);}
@@ -671,10 +677,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     padding-right: calc(16px + env(safe-area-inset-right, 0px)) !important;
   }
   .app-nav .user-name { display: none; }
-  .app-nav .btn-ghost.btn-sm {
-    padding: 6px 10px !important;
-    font-size: 11px !important;
-  }
+  .app-nav #nav-plan { display: none !important; }
+  .app-nav #logout-btn { display: none !important; }
+  .app-nav .user-chip { background: transparent; border: none; padding: 0; }
+  .app-nav #nav-avatar { cursor: pointer; }
+  .avatar-menu.open { display: block; }
 
   /* ── MAIN AREA ── */
   .main-area {
@@ -1852,10 +1859,15 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <div class="notif-bell-dot" id="notif-bell-dot" style="display:none;"></div>
       </button>
-      <div class="user-chip">
-        <div class="user-avatar" id="nav-avatar">D</div>
+      <div class="user-chip avatar-menu-wrap">
+        <div class="user-avatar" id="nav-avatar" onclick="toggleAvatarMenu(event)">D</div>
         <span class="user-name" id="nav-name">Demo User</span>
         <span class="plan-chip plan-free" id="nav-plan">Freemium</span>
+        <div class="avatar-menu" id="avatar-menu">
+          <div class="avatar-menu-plan" id="avatar-menu-plan">Freemium Plan</div>
+          <button class="avatar-menu-item" onclick="showView('settings');closeAvatarMenu()">Settings</button>
+          <button class="avatar-menu-item danger" onclick="closeAvatarMenu();doLogout()">Logout</button>
+        </div>
       </div>
       <button class="btn btn-ghost btn-sm" id="logout-btn" onclick="doLogout()">Logout</button>
     </div>
@@ -2957,6 +2969,7 @@ async function doLogin() {
         var planEl = document.getElementById('nav-plan');
         planEl.textContent = currentUser.plan === 'pro' ? 'Pro' : 'Freemium';
         planEl.className = 'plan-chip ' + (currentUser.plan === 'pro' ? 'plan-pro' : 'plan-free');
+        _syncAvatarMenuPlan(currentUser.plan === 'pro' ? 'Pro' : 'Freemium');
         document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
       }).catch(function(){}),
       loadUserDocuments(),
@@ -2970,6 +2983,24 @@ async function doLogin() {
   } finally {
     setLoading(btn, false, 'Sign in');
   }
+}
+
+function toggleAvatarMenu(e) {
+  if (e) e.stopPropagation();
+  var menu = document.getElementById('avatar-menu');
+  menu.classList.toggle('open');
+}
+function closeAvatarMenu() {
+  var menu = document.getElementById('avatar-menu');
+  if (menu) menu.classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  var wrap = document.querySelector('.avatar-menu-wrap');
+  if (wrap && !wrap.contains(e.target)) closeAvatarMenu();
+});
+function _syncAvatarMenuPlan(label) {
+  var el = document.getElementById('avatar-menu-plan');
+  if (el) el.textContent = label + ' Plan';
 }
 
 function doLogout() {
@@ -3069,6 +3100,7 @@ function initApp() {
   const planEl = document.getElementById('nav-plan');
   planEl.textContent = u.plan === 'pro' ? 'Pro' : 'Freemium';
   planEl.className = 'plan-chip ' + (u.plan === 'pro' ? 'plan-pro' : 'plan-free');
+  _syncAvatarMenuPlan(u.plan === 'pro' ? 'Pro' : 'Freemium');
   document.getElementById('dash-name').textContent = u.name.split(' ')[0];
   renderSidebar();
   renderStats();
@@ -4700,6 +4732,7 @@ async function activateTrialPro() {
     localStorage.setItem('langa_user', JSON.stringify(currentUser));
     document.getElementById('nav-plan').textContent = 'Pro';
     document.getElementById('nav-plan').className = 'plan-chip plan-pro';
+    _syncAvatarMenuPlan('Pro');
     closeUpgrade();
     renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
     toast('Welcome to Langa Pro!', 'Unlimited chat, smart reminders and 50 documents are now unlocked.', 'success', 6000);
@@ -4872,6 +4905,7 @@ async function doBillChangePlan(plan) {
     _billSummary.billing_description = res.plan === 'freemium' ? 'Free forever' : 'Billed monthly';
     document.getElementById('nav-plan').textContent = res.plan === 'pro' ? 'Pro' : res.plan === 'family' ? 'Family' : 'Freemium';
     document.getElementById('nav-plan').className = 'plan-chip ' + (res.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
+    _syncAvatarMenuPlan(res.plan === 'pro' ? 'Pro' : res.plan === 'family' ? 'Family' : 'Freemium');
     renderBillingOverview(); renderBillingPlans(); renderStats(); renderSidebar();
     showBillTab('overview');
     toast('Plan updated', 'You are now on the ' + label + ' plan.', 'success', 5000);
@@ -4896,6 +4930,7 @@ async function confirmBillCancel() {
     _billSummary.price_zar = 0; _billSummary.billing_description = 'Free forever';
     document.getElementById('nav-plan').textContent = 'Freemium';
     document.getElementById('nav-plan').className = 'plan-chip plan-free';
+    _syncAvatarMenuPlan('Freemium');
     hideBillCancel();
     renderBillingOverview(); renderBillingPlans(); renderStats(); renderSidebar();
     showBillTab('overview');
@@ -5894,6 +5929,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           var planEl = document.getElementById('nav-plan');
           planEl.textContent = currentUser.plan === 'pro' ? 'Pro' : 'Freemium';
           planEl.className = 'plan-chip ' + (currentUser.plan === 'pro' ? 'plan-pro' : 'plan-free');
+          _syncAvatarMenuPlan(currentUser.plan === 'pro' ? 'Pro' : 'Freemium');
           document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
         }).catch(function(){}),
         _docsPromise,
