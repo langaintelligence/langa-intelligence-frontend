@@ -1844,7 +1844,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="notif-bell-btn" onclick="toggleNotifPanel()" title="Notifications">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <div class="notif-bell-dot" id="notif-bell-dot"></div>
+        <div class="notif-bell-dot" id="notif-bell-dot" style="display:none;"></div>
       </button>
       <div class="user-chip">
         <div class="user-avatar" id="nav-avatar">D</div>
@@ -2482,7 +2482,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     <div class="notif-panel-title">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       Notifications
-      <span class="notif-unread-count" id="notif-count">3</span>
+      <span class="notif-unread-count" id="notif-count" style="display:none;"></span>
     </div>
     <div class="notif-panel-actions">
       <button class="notif-mark-all" onclick="markAllRead()">Mark all read</button>
@@ -2878,7 +2878,8 @@ function showView(view) {
 function _syncBnavDot() {
   var dot = document.getElementById('bnav-notif-dot');
   var topDot = document.getElementById('notif-bell-dot');
-  if (dot && topDot) dot.classList.toggle('visible', topDot.style.display !== 'none' && !topDot.classList.contains('hidden'));
+  // topDot.style.display is always explicitly set by updateNotifBadge — safe to compare
+  if (dot && topDot) dot.classList.toggle('visible', topDot.style.display === 'block');
 }
 
 function filterDocs() { renderDocs(); }
@@ -5199,7 +5200,19 @@ function toggleNotifPanel() {
   notifPanelOpen = !notifPanelOpen;
   var panel = document.getElementById('notif-panel');
   panel.classList.toggle('open', notifPanelOpen);
-  if (notifPanelOpen) { fetchNotifications(); renderNotifications(); }
+  if (notifPanelOpen) {
+    // Clear badge immediately in local state — don't wait for the API round-trip
+    notifications.forEach(function(n){ n.unread = false; });
+    updateNotifBadge();
+    renderNotifications();
+    // Persist to backend, then refresh the list (sequential so GET sees read state)
+    if (authToken) {
+      api('PATCH', '/notifications/read-all')
+        .catch(function(){})
+        .then(function(){ return fetchNotifications(); })
+        .catch(function(){});
+    }
+  }
 }
 
 function renderNotifications() {
@@ -5257,8 +5270,9 @@ function updateNotifBadge() {
   var unread = notifications.filter(function(n){ return n.unread; }).length;
   var countEl = document.getElementById('notif-count');
   var dotEl = document.getElementById('notif-bell-dot');
-  if (countEl) { countEl.textContent = unread; countEl.style.display = unread ? 'inline' : 'none'; }
-  if (dotEl) dotEl.style.display = unread ? 'block' : 'none';
+  if (countEl) { countEl.textContent = unread > 0 ? unread : ''; countEl.style.display = unread > 0 ? 'inline' : 'none'; }
+  if (dotEl) dotEl.style.display = unread > 0 ? 'block' : 'none';
+  _syncBnavDot();
 }
 
 function addNotification(type, title, msg, unread) {
