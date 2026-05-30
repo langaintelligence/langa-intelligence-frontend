@@ -528,6 +528,15 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .del-desc{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
 .del-actions{display:flex;gap:10px;}
 
+/* ── PDF PASSWORD MODAL ── */
+.pdf-pw-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;}
+.pdf-pw-modal{background:var(--white);border-radius:var(--r);width:100%;max-width:400px;padding:28px;animation:modalIn 0.2s ease;}
+.pdf-pw-icon{width:56px;height:56px;border-radius:50%;background:var(--blue-l);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:24px;}
+.pdf-pw-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:6px;text-align:center;}
+.pdf-pw-desc{font-size:13px;color:var(--muted);margin-bottom:20px;text-align:center;line-height:1.6;}
+.pdf-pw-notice{font-size:11px;color:var(--subtle);margin:12px 0 20px;line-height:1.5;}
+.badge-scanned{background:#EFF6FF;color:#1E40AF;border:1px solid #BFDBFE;}
+
 /* ── ONBOARDING TIP ── */
 .onboard-tip{background:linear-gradient(135deg,var(--blue-l),var(--cyan-l));border:1px solid var(--blue-m);border-radius:var(--r);padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px;animation:fadeIn 0.5s ease;}
 .ot-icon{font-size:24px;flex-shrink:0;}
@@ -2563,6 +2572,25 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
   </div>
 </div>
 
+<!-- ═══════════ PDF PASSWORD MODAL ═══════════ -->
+<div class="pdf-pw-overlay hidden" id="pdf-pw-overlay">
+  <div class="pdf-pw-modal">
+    <div class="pdf-pw-icon">🔒</div>
+    <div class="pdf-pw-title">Password-Protected PDF</div>
+    <div class="pdf-pw-desc">This document requires a password to open. Enter it below to proceed with analysis.</div>
+    <div class="form-group" style="margin-bottom:0;">
+      <label style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;display:block;">PDF Password</label>
+      <input type="password" id="pdf-pw-input" placeholder="Enter PDF password" style="width:100%;">
+    </div>
+    <div id="pdf-pw-error" style="font-size:12px;color:var(--red);margin-top:8px;display:none;"></div>
+    <p class="pdf-pw-notice">Your password is used only for text extraction and is never saved or logged anywhere.</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost btn-full" id="pdf-pw-cancel">Cancel</button>
+      <button class="btn btn-primary btn-full" id="pdf-pw-submit">Unlock &amp; Analyse</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script>
@@ -2764,6 +2792,7 @@ function apiDocToLocal(apiDoc, analysis) {
     cancelDeadline: apiDoc.cancel_deadline || null,
     renewalDate: apiDoc.renewal_date || null,
     is_analysed: !!apiDoc.is_analysed,
+    isScanned: analysis ? (analysis.is_scanned || false) : false,
     reminders: [],
     _fromApi: true,
   };
@@ -3317,6 +3346,7 @@ function renderDocs() {
         '<div class="dc-badges">' +
           '<span class="badge '+statusClass+'">'+statusLabel+'</span>' +
           '<span class="badge '+riskToBadgeClass(d.risk)+'">'+d.riskLabel+'</span>' +
+          (d.isScanned ? '<span class="badge badge-scanned">📷 Scanned</span>' : '') +
         '</div>' +
       '</div>' +
       '<div class="dc-name">'+esc(d.name)+'</div>' +
@@ -3567,10 +3597,30 @@ async function reanalyseDoc() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spin" style="width:16px;height:16px;border-width:2px;margin-bottom:4px;"></div>Analysing…';
   try {
-    var result = await api('POST', '/analysis?force=true', { document_id: currentDoc.id });
+    var result = null;
+    var _raPw = null;
+    for (var _raAttempt = 0; _raAttempt < 4; _raAttempt++) {
+      try {
+        var _raPayload = { document_id: currentDoc.id };
+        if (_raPw) _raPayload.password = _raPw;
+        result = await api('POST', '/analysis?force=true', _raPayload);
+        _raPw = null;
+        break;
+      } catch(_raE) {
+        _raPw = null;
+        var _raMsg = apiErrMsg(_raE);
+        if (_raMsg.toLowerCase().includes('password')) {
+          var _raPwVal = await _promptPdfPassword(_raAttempt > 0 ? _raMsg : null);
+          if (_raPwVal === null) { btn.disabled = false; btn.innerHTML = origHTML; return; }
+          _raPw = _raPwVal;
+        } else {
+          throw _raE;
+        }
+      }
+    }
     var updated = apiDocToLocal(
       { id: currentDoc.id, name: currentDoc.name, type: currentDoc.type, provider: result.provider || currentDoc.provider, status: currentDoc.status, is_analysed: true, created_at: currentDoc.createdAt },
-      { risk_level: result.risk_level, risk_label: result.risk_label, summary: result.summary, key_terms: result.key_terms, ai_insights: result.ai_insights, clauses: result.clauses }
+      { risk_level: result.risk_level, risk_label: result.risk_label, summary: result.summary, key_terms: result.key_terms, ai_insights: result.ai_insights, clauses: result.clauses, is_scanned: result.is_scanned }
     );
     var idx = userDocs.findIndex(function(d){ return d.id === currentDoc.id; });
     if (idx !== -1) userDocs[idx] = updated;
@@ -4061,8 +4111,28 @@ async function startAnalysisAPI(name) {
     var uploadResult = await api('POST', '/documents/upload', formData, { formData: true });
     var docId = uploadResult.document_id;
 
-    // Step 2: Analyse the uploaded document
-    var analysisResult = await api('POST', '/analysis', { document_id: docId });
+    // Step 2: Analyse the uploaded document (retry loop for password-protected PDFs)
+    var analysisResult = null;
+    var pdfPassword = null;
+    for (var _attempt = 0; _attempt < 4; _attempt++) {
+      try {
+        var analysisPayload = { document_id: docId };
+        if (pdfPassword) analysisPayload.password = pdfPassword;
+        analysisResult = await api('POST', '/analysis', analysisPayload);
+        pdfPassword = null;
+        break;
+      } catch(_e) {
+        pdfPassword = null;
+        var _msg = apiErrMsg(_e);
+        if (_msg.toLowerCase().includes('password')) {
+          var _pw = await _promptPdfPassword(_attempt > 0 ? _msg : null);
+          if (_pw === null) { processing = false; return; }
+          pdfPassword = _pw;
+        } else {
+          throw _e;
+        }
+      }
+    }
 
     // Build local doc from API response
     var apiDocObj = { id: docId, name: name, type: 'contract', provider: null, status: 'active', is_analysed: true, created_at: new Date().toISOString() };
@@ -4073,6 +4143,7 @@ async function startAnalysisAPI(name) {
       key_terms: analysisResult.key_terms,
       ai_insights: analysisResult.ai_insights,
       clauses: analysisResult.clauses,
+      is_scanned: analysisResult.is_scanned,
     });
     userDocs.push(newDoc);
     lastAnalysedId = newDoc.id;
@@ -4127,6 +4198,50 @@ async function startAnalysisAPI(name) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── PDF Password Modal ──────────────────────────────────────────────────────
+function _promptPdfPassword(errorMsg) {
+  return new Promise(function(resolve) {
+    var overlay = document.getElementById('pdf-pw-overlay');
+    var inp = document.getElementById('pdf-pw-input');
+    var err = document.getElementById('pdf-pw-error');
+    var submitBtn = document.getElementById('pdf-pw-submit');
+    var cancelBtn = document.getElementById('pdf-pw-cancel');
+
+    inp.value = '';
+    if (errorMsg) { err.textContent = errorMsg; err.style.display = 'block'; }
+    else { err.style.display = 'none'; }
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Unlock & Analyse';
+    overlay.classList.remove('hidden');
+    setTimeout(function() { inp.focus(); }, 80);
+
+    function cleanup() {
+      submitBtn.onclick = null;
+      cancelBtn.onclick = null;
+      inp.removeEventListener('keydown', onKey);
+    }
+    function onSubmit() {
+      var pw = inp.value;
+      if (!pw) { err.textContent = 'Please enter the password.'; err.style.display = 'block'; return; }
+      cleanup();
+      overlay.classList.add('hidden');
+      inp.value = '';
+      resolve(pw);
+    }
+    function onCancel() {
+      cleanup();
+      overlay.classList.add('hidden');
+      inp.value = '';
+      resolve(null);
+    }
+    function onKey(e) { if (e.key === 'Enter') onSubmit(); }
+
+    submitBtn.onclick = onSubmit;
+    cancelBtn.onclick = onCancel;
+    inp.addEventListener('keydown', onKey);
+  });
+}
 
 function localAnalyse(text, name) {
   const t = text.toLowerCase();
@@ -4309,6 +4424,7 @@ function buildDocFromAnalysis(r, name, text) {
     summary: r.summary || '',
     cancelDeadline: r.cancel_deadline || null,
     renewalDate: r.renewal_date || null,
+    isScanned: r.is_scanned || false,
     rawText: text   // store original for viewer
   };
 }
