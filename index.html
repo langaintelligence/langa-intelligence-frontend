@@ -347,6 +347,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .chat-modal{background:rgba(255,255,255,0.15);backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,0.3);border-radius:24px;width:100%;max-width:760px;height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.3);animation:modalIn 0.25s ease;}
 .chat-header{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);display:flex;align-items:center;gap:14px;}
 .chat-ai-avatar{width:80px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--blue));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(37,99,235,0.4);padding:0 10px;}
+[data-theme="dark"] .lai-circle-avatar{background:linear-gradient(135deg,#1E3A5F,#1E40AF)!important;color:#93C5FD!important;}
 .chat-doc-name{font-size:13px;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:5px;}
 .chat-header-title{font-size:20px;font-weight:700;color:var(--white);}
 .chat-msgs{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;}
@@ -2197,7 +2198,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 <div class="chat-overlay hidden" id="chat-overlay">
   <div class="chat-modal">
     <div class="chat-header">
-      <div class="chat-ai-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:12px;font-weight:800;letter-spacing:-0.5px;">LI</div>
+      <div class="chat-ai-avatar lai-circle-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:12px;font-weight:800;letter-spacing:-0.5px;">LI</div>
       <div style="flex:1;">
         <div class="chat-header-title">Ask Langa</div>
         <div class="chat-doc-name">
@@ -3954,7 +3955,7 @@ function appendUserMsg(text) {
   msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
 }
 
-const _LI_AVATAR = '<div class="chat-mini-avatar" style="background:var(--navy);border-radius:50%;width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;letter-spacing:-0.5px;">LI</div>';
+const _LI_AVATAR = '<div class="chat-mini-avatar lai-circle-avatar" style="background:var(--navy);border-radius:50%;width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;letter-spacing:-0.5px;">LI</div>';
 
 function inlineMd(t) {
   return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*([^*\n]+?)\*/g,'<em>$1</em>');
