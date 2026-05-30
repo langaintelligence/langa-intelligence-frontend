@@ -877,6 +877,270 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 
   /* ── UPLOAD ZONE ── */
   .upload-zone { padding: 24px 14px !important; }
+
+  /* ════════════════════════════════════════════════════════
+     COMPREHENSIVE MOBILE AUDIT — REMAINING FIXES
+     375px – 414px viewport targets
+     ════════════════════════════════════════════════════════ */
+
+  /* ── LANDING: hero CTA buttons — full-width stacked on mobile ── */
+  #home .btn-lg,
+  #page-landing section .btn-lg {
+    width: 100% !important;
+    justify-content: center !important;
+    min-height: 48px !important;
+  }
+
+  /* ── LANDING: anonymous CTA section — reduce padding ── */
+  #page-landing section[style*="text-align:center"] {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* ── LANDING: pricing cards — single column (5 cards too wide at 375px) ── */
+  #pricing > div > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── LANDING: footer — stack vertically, centred ── */
+  footer > div {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  footer > div > div {
+    flex-wrap: wrap !important;
+    gap: 16px !important;
+  }
+
+  /* ── LANDING: section top/bottom padding not too tall on mobile ── */
+  #features, #core-features, #solutions, #pricing, #about {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+  }
+  #home {
+    padding-top: 48px !important;
+    padding-bottom: 40px !important;
+  }
+
+  /* ── LANDING: "solutions" cards down to 1 col at 375px ── */
+  #solutions > div > div { grid-template-columns: 1fr !important; }
+
+  /* ── ALL BUTTONS — minimum 44px tap targets ── */
+  .btn {
+    min-height: 44px !important;
+  }
+  .btn-sm {
+    min-height: 38px !important;
+  }
+
+  /* ── LOGIN/SIGNUP: first/last name field grid — stack on mobile ── */
+  #signup-step-1 > div[style*="grid-template-columns:1fr 1fr"],
+  #signup-step-1 > div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+  }
+
+  /* ── RESET / CONFIRM page cards — reduce horizontal padding ── */
+  #page-reset > div,
+  #page-confirm > div {
+    padding: 36px 20px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+
+  /* ── APP FOOTER — hide on mobile, bottom nav replaces it ── */
+  #app-footer,
+  .app-full-footer {
+    display: none !important;
+  }
+
+  /* ── MAIN AREA — compensate only for bottom nav (not desktop footer) ── */
+  .main-area {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* ── NOTIFICATION PANEL — account for bottom nav height ── */
+  .notif-panel {
+    height: calc(100vh - 56px - 56px) !important;
+    height: calc(100dvh - 56px - 56px) !important;
+    overflow-y: auto !important;
+  }
+
+  /* ── DETAIL MODAL: 3-button secondary grid → 2+1 layout ── */
+  #detail-modal > div[style*="padding:0 24px"] > div[style*="grid-template-columns:1fr 1fr 1fr"],
+  #detail-modal [style*="grid-template-columns:1fr 1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  /* Third button (Re-analyse) spans full width */
+  #detail-modal [style*="grid-template-columns:1fr 1fr 1fr"] > button:nth-child(3),
+  #detail-modal [style*="grid-template-columns: 1fr 1fr 1fr"] > button:nth-child(3) {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* ── REMINDER SUMMARY BAR — 3 cols too wide at 360px, use 1 col ── */
+  .reminder-summary-bar {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* ── UPLOAD MODAL action buttons — stack vertically ── */
+  #upload-modal-body > div[style*="display:flex"] {
+    flex-direction: column !important;
+  }
+  #upload-modal-body > div[style*="display:flex"] .btn {
+    width: 100% !important;
+  }
+
+  /* ── CHAT SEND BUTTON — minimum tap target ── */
+  #chat-send {
+    min-width: 64px !important;
+    min-height: 44px !important;
+    padding: 0 16px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ── SIGNUP STEP 2/3 back+continue button row ── */
+  #signup-step-2 > div[style*="display:flex"],
+  #signup-step-3 > div[style*="display:flex"][style*="gap:10px"] {
+    flex-direction: column !important;
+  }
+  #signup-step-2 > div[style*="display:flex"] .btn,
+  #signup-step-3 > div[style*="display:flex"][style*="gap:10px"] .btn {
+    flex: none !important;
+    width: 100% !important;
+  }
+
+  /* ── SIGNUP STEP 3: channel grid stays 2 cols but freq grid clean ── */
+  .notif-pref-grid { grid-template-columns: 1fr 1fr !important; }
+  .notif-freq-grid { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* ── VIEWER MODAL: safe-area bottom padding ── */
+  .viewer-modal {
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+  .viewer-header {
+    padding: 12px 16px !important;
+  }
+  .viewer-doc-name {
+    font-size: 14px !important;
+  }
+  .viewer-doc-meta {
+    font-size: 12px !important;
+  }
+  /* Viewer header actions: stack download + close more comfortably */
+  .viewer-actions {
+    gap: 4px !important;
+  }
+
+  /* ── MODAL BODY PADDING — tighter on mobile ── */
+  .modal-body {
+    padding: 16px !important;
+  }
+  .modal-header {
+    padding: 14px 16px !important;
+  }
+
+  /* ── DETAIL MODAL TABS — full-width, equal tap zones ── */
+  .tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .tab {
+    text-align: center !important;
+    padding: 10px 4px !important;
+    font-size: 13px !important;
+  }
+
+  /* ── REMINDER CARD footer — wrap chip text ── */
+  .rc-footer {
+    flex-wrap: wrap !important;
+  }
+
+  /* ── SETTINGS: inner grid already forced to 1-col via #view-settings > div
+     also ensure max-width is removed so card fills the screen ── */
+  #view-settings > div {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* ── SIGNUP STEP INDICATOR: prevent overflow on 375px ── */
+  .signup-steps {
+    gap: 4px !important;
+  }
+  .ss-step {
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+
+  /* ── REMINDERS PAGE HEAD — prevent Refresh button overflow ── */
+  #view-reminders .page-head {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* ── LANDING: pricing section heading area ── */
+  #pricing > div > *:not(table):not(div:last-child) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* ── NOTIF PANEL ITEMS — minimum tap target ── */
+  .notif-item {
+    min-height: 44px !important;
+    padding: 12px 16px !important;
+  }
+
+  /* ── DISCLAIMER BANNER — font legible ── */
+  .disclaimer-banner {
+    font-size: 11px !important;
+    padding: 10px 16px !important;
+  }
+
+  /* ── UPGRADE MODAL: plan comparison grid — stack to single column ── */
+  #upgrade-overlay .modal-body > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── BILLING MODAL: left nav + content panel → stack vertically ── */
+  #billing-overlay .modal > div[style*="display:flex"][style*="min-height"] {
+    flex-direction: column !important;
+  }
+  .bill-nav {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--bdr) !important;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding: 8px !important;
+    gap: 4px !important;
+  }
+  .bill-tab {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    min-height: 38px !important;
+  }
+  .bill-content {
+    max-height: calc(70dvh - 48px) !important;
+    padding: 16px !important;
+  }
+
+  /* ── DELETE CONFIRM OVERLAY — ensure it's fully visible ── */
+  .del-overlay {
+    padding: 16px !important;
+  }
+  .del-actions {
+    flex-direction: column !important;
+  }
+  .del-actions .btn {
+    width: 100% !important;
+  }
 }
 
 /* ── TABLET (769 - 1024px) ── */
