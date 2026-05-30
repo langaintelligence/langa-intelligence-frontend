@@ -683,7 +683,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 
   /* ── BOTTOM NAV BAR ── */
   #mobile-bottom-nav {
-    display: flex !important;
+    display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -1350,7 +1350,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       <a href="#solutions" onclick="toggleLandingMenu()">Solutions</a>
       <a href="#pricing" onclick="toggleLandingMenu()">Pricing</a>
       <a href="#about" onclick="toggleLandingMenu()">About</a>
-      <a href="#" style="color:var(--blue);font-weight:600;" onclick="showLogin();toggleLandingMenu();">Sign In →</a>
+      <a href="#" style="color:var(--blue);font-weight:600;" onclick="showLogin();toggleLandingMenu();return false;">Sign In →</a>
     </div>
   </header>
 
@@ -2539,7 +2539,7 @@ window.addEventListener('popstate', function(e) {
   var state = e.state;
   _historyNav = true;
   try {
-    if (!state || state.screen === 'landing') {
+    if (!state || state.screen === 'landing' || state.screen === '_init') {
       if (authToken) {
         _navReplace({ screen: 'app', view: 'dashboard' }, 'dashboard');
         _showAppShell(); showView('dashboard');
@@ -2831,6 +2831,8 @@ function showConfirmPage(email) {
   if (el) el.textContent = email || '';
   show('page-confirm');
   document.getElementById('app-footer').style.display = 'none';
+  var bnav = document.getElementById('mobile-bottom-nav');
+  if (bnav) bnav.style.display = 'none';
 }
 function showApp() {
   hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-reset'); hide('page-confirm');
@@ -2964,6 +2966,8 @@ function closeForgotModal() {
 function showResetPage() {
   hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-app');
   document.getElementById('app-footer').style.display = 'none';
+  var bnav = document.getElementById('mobile-bottom-nav');
+  if (bnav) bnav.style.display = 'none';
   show('page-reset');
 }
 
