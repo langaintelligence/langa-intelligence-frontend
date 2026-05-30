@@ -2864,7 +2864,7 @@ function showView(view) {
     var btn = document.getElementById('bnav-' + v);
     if (btn) btn.classList.toggle('active', v === view);
   });
-  if (view === 'reminders') renderReminders();
+  if (view === 'reminders') { renderReminders(); markRemindersVisited(); }
   if (view === 'settings') initSettings();
   if (!_historyNav) {
     if (view === 'dashboard') {
@@ -3079,24 +3079,42 @@ function renderSidebar() {
   }).join('');
 }
 
-function _countActiveReminders() {
+// Badge is suppressed after user visits the Reminders tab (persists within the session).
+var _remVisited = sessionStorage.getItem('rem_visited') === '1';
+
+function _countUrgentReminders() {
+  // Only count items due within 7 days — 2027 dates and scheduled items never trigger the badge.
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  function within7(dateStr) {
+    if (!dateStr) return false;
+    var d = new Date(dateStr.indexOf('T') === -1 ? dateStr + 'T00:00:00' : dateStr);
+    if (isNaN(d.getTime())) return false;
+    var days = Math.ceil((d - today) / 86400000);
+    return days >= 0 && days <= 7;
+  }
   var count = 0;
   userDocs.forEach(function(d) {
-    if (d.cancelDeadline) count++;
+    if (d.cancelDeadline && within7(d.cancelDeadline)) count++;
     if (d.status === 'expired') count++;
-    if (d.status === 'expiring-soon' && !d.cancelDeadline) count++;
-    if (d.renewalDate) count++;
-    count += (d.reminders || []).length;
+    if (d.status === 'expiring-soon' && !d.cancelDeadline && within7(d.expiryDate)) count++;
+    if (d.renewalDate && within7(d.renewalDate)) count++;
+    (d.reminders || []).forEach(function(r) { if (within7(r.remind_at)) count++; });
   });
   return count;
 }
 
 function updateReminderBadge() {
-  var count = _countActiveReminders();
+  var count = _remVisited ? 0 : _countUrgentReminders();
   var badgeEl = document.getElementById('reminder-badge');
   var dotEl = document.getElementById('bnav-rem-dot');
   if (badgeEl) { badgeEl.textContent = count > 0 ? count : ''; badgeEl.style.display = count > 0 ? '' : 'none'; }
   if (dotEl) dotEl.classList.toggle('visible', count > 0);
+}
+
+function markRemindersVisited() {
+  _remVisited = true;
+  sessionStorage.setItem('rem_visited', '1');
+  updateReminderBadge();
 }
 
 function renderStats() {
@@ -3607,7 +3625,11 @@ async function sendChat() {
           userDocs[docIdx].reminders.push({ id: rem.id, title: rem.title, remind_at: rem.remind_at, reminder_type: rem.reminder_type });
           renderDocs();
         }
+        // Allow badge to reappear for the new reminder
+        _remVisited = false;
+        sessionStorage.removeItem('rem_visited');
         renderReminders();
+        updateReminderBadge();
         toast('Reminder set', (rem.title || 'Reminder') + (remDate ? ' — ' + remDate : ''), 'success', 5000);
       }
     } else {
