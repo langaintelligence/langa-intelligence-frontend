@@ -3346,9 +3346,9 @@ function openDetail(id) {
   // ── Risk banner ──────────────────────────────────────────────────────────
   var bannerCls = riskToBannerClass(doc.risk);
   var riskIcon  = isHighRisk(doc.risk) ? '&#9888;' : isMedRisk(doc.risk) ? '!' : '&#10003;';
-  var riskMsg   = isHighRisk(doc.risk) ? 'Needs Attention &mdash; Review Urgently'
-                : isMedRisk(doc.risk)  ? 'Review Advised &mdash; Some Clauses to Note'
-                :                        'Looks Good &mdash; No Major Concerns';
+  var riskMsg   = isHighRisk(doc.risk) ? 'Needs Attention — Review Urgently'
+                : isMedRisk(doc.risk)  ? 'Review Advised — Some Clauses to Note'
+                :                        'Looks Good — No Major Concerns';
   document.getElementById('dm-risk-banner').innerHTML =
     '<div class="risk-banner ' + bannerCls + '">' +
       '<div class="rb-icon">' + riskIcon + '</div>' +
@@ -3381,14 +3381,15 @@ function openDetail(id) {
     summaryHTML +=
       '<div class="date-row">' +
         '<div class="dr-icon" style="background:var(--blue-l)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.75" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
-        '<div><div class="dr-label">Expiry date</div><div class="dr-val">' + (fmtDate(doc.expiryDate) || '&mdash;') + '</div></div>' +
+        '<div><div class="dr-label">Expiry date</div><div class="dr-val">' + (fmtDate(doc.expiryDate) || '—') + '</div></div>' +
       '</div>';
   }
   if (doc.is_analysed && !doc.cancelDeadline && !doc.renewalDate && !doc.expiryDate) {
+    var missingLabel = !doc.provider ? 'No dates or provider found in last analysis' : 'No dates found in last analysis';
     summaryHTML +=
       '<div style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
-        '<span style="font-size:12px;color:var(--muted);">No dates found in last analysis</span>' +
-        '<a id="extract-dates-btn" href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="font-size:12px;font-weight:600;color:var(--blue);white-space:nowrap;text-decoration:none;">Extract dates &#8594;</a>' +
+        '<span style="font-size:12px;color:var(--muted);">' + missingLabel + '</span>' +
+        '<a id="extract-dates-btn" href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="font-size:12px;font-weight:600;color:var(--blue);white-space:nowrap;text-decoration:none;">Refresh &#8594;</a>' +
       '</div>';
   }
   document.getElementById('dm-summary').innerHTML = summaryHTML;
@@ -3422,10 +3423,10 @@ function openDetail(id) {
   // ── Info tab ─────────────────────────────────────────────────────────────
   var infoHTML =
     '<div class="detail-grid">' +
-      '<div class="detail-item"><div class="di-label">Provider</div><div class="di-val">' + esc(doc.provider || '&mdash;') + '</div></div>' +
+      '<div class="detail-item"><div class="di-label">Provider</div><div class="di-val">' + (doc.provider ? esc(doc.provider) : '<span style="color:var(--muted);font-style:italic;">Not specified</span>') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Document type</div><div class="di-val">' + esc(doc.type ? doc.type.charAt(0).toUpperCase() + doc.type.slice(1) : 'Contract') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Upload date</div><div class="di-val">' + (doc.uploadDate ? new Date(doc.uploadDate).toLocaleDateString('en-ZA') : 'Today') + '</div></div>' +
-      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (fmtDate(doc.expiryDate) || (doc.is_analysed ? '<a href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;">Extract &#8594;</a>' : '&mdash;')) + '</div></div>' +
+      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (fmtDate(doc.expiryDate) || (doc.is_analysed ? '<a href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;">Extract &#8594;</a>' : '—')) + '</div></div>' +
       (doc.coverageAmount ? '<div class="detail-item"><div class="di-label">Coverage amount</div><div class="di-val">' + esc(doc.coverageAmount) + '</div></div>' : '') +
     '</div>';
 
@@ -3474,13 +3475,14 @@ async function refreshDates(docId) {
   var origText = btn ? btn.innerHTML : '';
   if (btn) { btn.innerHTML = 'Extracting&#8230;'; btn.style.pointerEvents = 'none'; }
   try {
-    var result = await api('POST', '/analysis/' + docId + '/refresh-dates');
+    var result = await api('POST', '/analysis/' + docId + '/refresh');
     var idx = userDocs.findIndex(function(d){ return d.id === docId; });
     if (idx !== -1) {
       var today = new Date();
       if (result.expiry_date) userDocs[idx].expiryDate = result.expiry_date;
       if (result.renewal_date) userDocs[idx].renewalDate = result.renewal_date;
       if (result.cancel_deadline) userDocs[idx].cancelDeadline = result.cancel_deadline;
+      if (result.provider) userDocs[idx].provider = result.provider;
       if (result.expiry_date && (userDocs[idx].status === 'active' || !userDocs[idx].status)) {
         var daysLeft = Math.ceil((new Date(result.expiry_date + 'T00:00:00') - today) / (1000 * 60 * 60 * 24));
         if (daysLeft < 0) userDocs[idx].status = 'expired';
@@ -3490,13 +3492,18 @@ async function refreshDates(docId) {
     }
     renderSidebar(); renderStats(); renderInsights(); renderDocs();
     openDetail(docId);
-    if (result.expiry_date || result.renewal_date || result.cancel_deadline) {
-      toast('Dates extracted', 'Document dates have been updated.', 'success', 3500);
+    var gotDates = result.expiry_date || result.renewal_date || result.cancel_deadline;
+    var gotProvider = result.provider;
+    if (gotDates || gotProvider) {
+      var parts = [];
+      if (gotDates) parts.push('dates');
+      if (gotProvider) parts.push('provider');
+      toast('Metadata updated', 'Found: ' + parts.join(' and ') + '.', 'success', 3500);
     } else {
-      toast('No dates found', 'No specific dates could be extracted from this document.', 'info', 3500);
+      toast('Nothing found', 'No dates or provider could be extracted from this document.', 'info', 3500);
     }
   } catch(e) {
-    toast('Extraction failed', e.message || 'Could not extract dates.', 'error', 4000);
+    toast('Extraction failed', e.message || 'Could not extract metadata.', 'error', 4000);
     if (btn) { btn.innerHTML = origText; btn.style.pointerEvents = ''; }
   }
 }
