@@ -44,6 +44,14 @@
 [data-theme="dark"] .data-table th{background:#1E3A5F;color:#F1F5F9;}
 [data-theme="dark"] .data-table tr:nth-child(odd) td{background:var(--white);}
 [data-theme="dark"] .data-table tr:nth-child(even) td{background:var(--bg);}
+[data-theme="dark"] .rb-review{background:rgba(217,119,6,0.15);border-color:#D97706;color:#FCD34D;}
+[data-theme="dark"] .rb-review .rb-icon{background:rgba(217,119,6,0.2);}
+[data-theme="dark"] .badge-review{background:rgba(217,119,6,0.2);color:#FCD34D;border:1px solid rgba(217,119,6,0.4);}
+[data-theme="dark"] .badge-expiring{background:rgba(217,119,6,0.2);color:#FCD34D;border:1px solid rgba(217,119,6,0.4);}
+[data-theme="dark"] .doc-reminder-tag{background:rgba(217,119,6,0.15);color:#FDE68A;border-color:rgba(217,119,6,0.3);}
+[data-theme="dark"] .amber-info-banner{background:rgba(217,119,6,0.15)!important;border-color:#D97706!important;}
+[data-theme="dark"] .amber-title{color:#FCD34D!important;}
+[data-theme="dark"] .amber-body{color:#FDE68A!important;}
 body{font-family:Sora,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;transition:background-color 0.2s ease,color 0.2s ease;}
 
 /* ── LOGO SVG ── */
@@ -2261,11 +2269,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <div class="price-feature"><div class="pf-dot dot-yes"></div>Full dashboard</div>
         </div>
       </div>
-      <div style="background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
+      <div class="amber-info-banner" style="background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <div>
-          <div style="font-size:13px;font-weight:600;color:#92400E;margin-bottom:3px;">Payments coming soon</div>
-          <div style="font-size:12px;color:#B45309;line-height:1.5;">We're integrating secure payments. In the meantime, experience all Pro features completely free — no card needed.</div>
+          <div class="amber-title" style="font-size:13px;font-weight:600;color:#92400E;margin-bottom:3px;">Payments coming soon</div>
+          <div class="amber-body" style="font-size:12px;color:#B45309;line-height:1.5;">We're integrating secure payments. In the meantime, experience all Pro features completely free — no card needed.</div>
         </div>
       </div>
       <button class="btn btn-primary btn-full btn-lg" id="trial-pro-btn" onclick="activateTrialPro()">Experience Pro Features Now →</button>
@@ -2656,6 +2664,7 @@ function toggleDarkMode(enabled) {
 }
 
 initTheme();
+function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
 
 const API_BASE = 'https://langa-intelligence-production.up.railway.app';
 
@@ -4076,8 +4085,9 @@ async function startAnalysis() {
     incrementMonthlyUploads();
     renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
 
-    var alertBg = (newDoc.risk === 'high' || newDoc.risk === 'needs attention') ? 'var(--red-l)' : (newDoc.risk === 'medium' || newDoc.risk === 'review advised') ? 'var(--amber-l)' : 'var(--green-l)';
-    var alertFg = (newDoc.risk === 'high' || newDoc.risk === 'needs attention') ? '#991B1B' : (newDoc.risk === 'medium' || newDoc.risk === 'review advised') ? '#92400E' : '#14532D';
+    var _dk1 = isDark();
+    var alertBg = (newDoc.risk === 'high' || newDoc.risk === 'needs attention') ? 'var(--red-l)' : (newDoc.risk === 'medium' || newDoc.risk === 'review advised') ? (_dk1 ? 'rgba(217,119,6,0.15)' : 'var(--amber-l)') : 'var(--green-l)';
+    var alertFg = (newDoc.risk === 'high' || newDoc.risk === 'needs attention') ? '#991B1B' : (newDoc.risk === 'medium' || newDoc.risk === 'review advised') ? (_dk1 ? '#FCD34D' : '#92400E') : '#14532D';
     var FILE_ICON = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
 
     body.innerHTML =
@@ -4214,8 +4224,9 @@ async function startAnalysisAPI(name) {
     pendingUploadFile = null;
     renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
 
-    var alertBg = isHighRisk(newDoc.risk) ? 'var(--red-l)' : isMedRisk(newDoc.risk) ? 'var(--amber-l)' : 'var(--green-l)';
-    var alertFg = isHighRisk(newDoc.risk) ? '#991B1B' : isMedRisk(newDoc.risk) ? '#92400E' : '#14532D';
+    var _dk2 = isDark();
+    var alertBg = isHighRisk(newDoc.risk) ? 'var(--red-l)' : isMedRisk(newDoc.risk) ? (_dk2 ? 'rgba(217,119,6,0.15)' : 'var(--amber-l)') : 'var(--green-l)';
+    var alertFg = isHighRisk(newDoc.risk) ? '#991B1B' : isMedRisk(newDoc.risk) ? (_dk2 ? '#FCD34D' : '#92400E') : '#14532D';
     var FILE_ICON = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
     body.innerHTML =
       '<div class="success-screen">' +
@@ -4615,6 +4626,9 @@ function renderReminders() {
 
   function buildCard(r) {
     var cfg = CFG[r.bucket];
+    var _dkc = isDark();
+    var badgeBg = (r.bucket === 'due-soon' && _dkc) ? 'rgba(217,119,6,0.15)' : cfg.bg;
+    var badgeColor = (r.bucket === 'due-soon' && _dkc) ? '#FDE68A' : cfg.color;
     var deleteBtn = r.remId
       ? '<button class="btn btn-ghost btn-sm" style="color:var(--red);" onclick="deleteScheduledReminder(\'' + r.remId + '\',\'' + r.docId + '\')">Delete</button>'
       : '';
@@ -4623,7 +4637,7 @@ function renderReminders() {
       '<div class="rc-body">' +
         '<div class="rc-top">' +
           '<div class="rc-title">' + (r.remId ? '🔔 ' : '') + esc(r.title) + '</div>' +
-          '<span class="rc-when-badge" style="background:' + cfg.bg + ';color:' + cfg.color + '">' + esc(r.dateStr) + '</span>' +
+          '<span class="rc-when-badge" style="background:' + badgeBg + ';color:' + badgeColor + '">' + esc(r.dateStr) + '</span>' +
         '</div>' +
         '<div class="rc-desc">' + esc(r.desc) + '</div>' +
         '<div class="rc-footer">' +
@@ -4907,10 +4921,10 @@ function showDisclaimerModal() {
       '</div>' +
       '<div style="padding:24px 28px;">' +
 
-        '<div style="background:var(--amber-l);border:1px solid var(--amber);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;gap:10px;">' +
+        (function(){ var _d=isDark(); return '<div style="background:' + (_d ? 'rgba(217,119,6,0.15)' : 'var(--amber-l)') + ';border:1px solid ' + (_d ? '#D97706' : 'var(--amber)') + ';border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;gap:10px;">' +
           '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="1.75" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
-          '<div style="font-size:13px;color:#92400E;line-height:1.6;font-weight:500;">Important: Langa is an AI-powered information tool, not a legal service. It does not constitute legal advice.</div>' +
-        '</div>' +
+          '<div style="font-size:13px;color:' + (_d ? '#FDE68A' : '#92400E') + ';line-height:1.6;font-weight:500;">Important: Langa is an AI-powered information tool, not a legal service. It does not constitute legal advice.</div>' +
+        '</div>'; })() +
 
         '<div style="font-size:13px;color:#334155;line-height:1.75;">' +
 
@@ -5299,7 +5313,8 @@ function _renderReminderModal() {
   opts.forEach(function(type) {
     var sel = type === _remSelectedType;
     var dateVal = type === 'expiry' ? doc.expiryDate : type === 'renewal' ? doc.renewalDate : doc.cancelDeadline;
-    h += '<div onclick="_selRemType(\'' + type + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid ' + (sel ? _REM_COLORS[type] : 'var(--bdr)') + ';border-radius:var(--r);cursor:pointer;background:' + (sel ? _REM_BGS[type] : 'var(--white)') + ';margin-bottom:8px;">' +
+    var _remSelBg = sel ? (isDark() && type === 'renewal' ? 'rgba(217,119,6,0.15)' : _REM_BGS[type]) : 'var(--white)';
+    h += '<div onclick="_selRemType(\'' + type + '\')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid ' + (sel ? _REM_COLORS[type] : 'var(--bdr)') + ';border-radius:var(--r);cursor:pointer;background:' + _remSelBg + ';margin-bottom:8px;">' +
       '<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:var(--navy);">' + _REM_LABELS[type] + '</div>' +
       '<div style="font-size:12px;color:var(--muted);">' + formatDateZA(dateVal) + '</div></div>' +
       (sel ? '<div style="width:16px;height:16px;border-radius:50%;background:' + _REM_COLORS[type] + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>' : '') +
