@@ -229,10 +229,12 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .badge-attention{background:var(--red-l);color:var(--red);}
 .badge-review{background:var(--amber-l);color:var(--amber);}
 .badge-clear{background:var(--green-l);color:var(--green);}
-.dc-name{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.dc-type{font-size:11px;color:var(--muted);margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dc-name{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px;word-break:break-word;overflow-wrap:break-word;}
+.dc-type{font-size:11px;color:var(--muted);margin-bottom:10px;word-break:break-word;overflow-wrap:break-word;}
 .dc-meta{display:flex;gap:8px 14px;font-size:11px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap;}
-.dc-insight{background:linear-gradient(135deg,var(--blue-l),var(--cyan-l));border-radius:var(--rs);padding:8px 10px;font-size:11px;color:var(--blue-d);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.dc-insight{background:linear-gradient(135deg,var(--blue-l),var(--cyan-l));border-radius:var(--rs);padding:8px 10px;font-size:11px;color:var(--blue-d);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word;}
+.dc-insight.expanded{display:block;overflow:visible;-webkit-line-clamp:unset;}
+.dc-read-more{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--blue);background:none;border:none;padding:0;cursor:pointer;line-height:1.4;}
 .doc-reminder-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
 .doc-reminder-tag{font-size:11px;background:var(--amber-l);color:#92400E;border-radius:99px;padding:3px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:1px solid #FDE68A;transition:opacity 0.15s;white-space:nowrap;}
 .doc-reminder-tag:hover{opacity:0.65;}
@@ -3320,7 +3322,7 @@ function renderDocs() {
       '<div class="dc-name">'+esc(d.name)+'</div>' +
       '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
       '<div class="dc-meta">'+(d.expiryDate?'<span>📅 Expires: '+fmtDate(d.expiryDate,{day:'numeric',month:'short',year:'numeric'})+'</span>':'<span style="color:var(--subtle)">📅 No expiry date</span>')+(d.coverageAmount?'<span>💰 '+esc(d.coverageAmount)+'</span>':'')+'</div>' +
-      (d.aiInsights[0]?'<div class="dc-insight">✨ '+esc(d.aiInsights[0])+'</div>':'') +
+      (d.aiInsights[0]?'<div class="dc-insight-wrap"><div class="dc-insight">✨ '+esc(d.aiInsights[0])+'</div><button class="dc-read-more" onclick="event.stopPropagation();toggleInsight(this)">Read more</button></div>':'') +
       ((d.reminders && d.reminders.length) ? '<div class="doc-reminder-tags">' +
         d.reminders.map(function(r){
           var label = r.title || r.reminder_type || 'Reminder';
@@ -3329,6 +3331,29 @@ function renderDocs() {
         }).join('') + '</div>' : '') +
     '</div>';
   }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📄</div><div style="font-size:15px;font-weight:600;color:var(--muted);margin-bottom:6px;">No documents found</div><div style="font-size:13px;color:var(--subtle);">Try adjusting your filters or search query</div></div>';
+  renderDocsAfter();
+}
+
+function renderDocsAfter() { setTimeout(_initReadMoreBtns, 0); }
+
+function toggleInsight(btn) {
+  var insight = btn.previousElementSibling;
+  var expanding = !insight.classList.contains('expanded');
+  insight.classList.toggle('expanded', expanding);
+  btn.textContent = expanding ? 'Read less' : 'Read more';
+}
+
+function _initReadMoreBtns() {
+  document.querySelectorAll('.dc-insight-wrap').forEach(function(wrap) {
+    var insight = wrap.querySelector('.dc-insight');
+    var btn = wrap.querySelector('.dc-read-more');
+    if (!insight || !btn) return;
+    // Reset to clamped state first so scrollHeight reflects full content
+    insight.classList.remove('expanded');
+    btn.textContent = 'Read more';
+    // Hide button if content fits within the clamped height
+    btn.style.display = insight.scrollHeight > insight.clientHeight ? '' : 'none';
+  });
 }
 
 // ═══════════════════════════════════
