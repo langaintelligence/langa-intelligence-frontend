@@ -3784,20 +3784,32 @@ async function openChat(doc) {
     else appendAIMsg(m.content);
   });
 
+  var introKey = 'chatIntroShown_' + doc.id;
+  var hasHistory = chatHistory.length > 0;
+  var introSeen = localStorage.getItem(introKey);
   var riskVal = doc.risk || '';
   var isHigh = riskVal === 'high' || riskVal === 'needs attention';
-  appendAIMsg('I\'ve read your **' + doc.name + '**. Alert level: **' + (doc.riskLabel || doc.risk || 'unknown') + '**. Ask me anything about it — I know every clause and detail.');
-
   var sugg = document.getElementById('chat-suggestions');
-  var qs = isHigh
-    ? ['What\'s the biggest concern in this contract?', 'Can I cancel early and what will it cost?', 'What do I need to do urgently?', 'Are my rights protected here?']
-    : ['When does this document expire?', 'What are the key terms I should know?', 'Are there any renewal requirements?', 'What should I watch out for?'];
-  sugg.innerHTML = qs.map(function(q) {
-    return '<div class="chat-sq" onclick="sendSuggest(\'' + q.replace(/'/g, "&#39;") + '\')">' + q + '</div>';
-  }).join('');
+
+  if (!hasHistory && !introSeen) {
+    // First ever open for this document — show intro once and suggestions
+    appendAIMsg('I\'ve read your **' + doc.name + '**. Alert level: **' + (doc.riskLabel || doc.risk || 'unknown') + '**. Ask me anything about it — I know every clause and detail.');
+    localStorage.setItem(introKey, '1');
+    var qs = isHigh
+      ? ['What\'s the biggest concern in this contract?', 'Can I cancel early and what will it cost?', 'What do I need to do urgently?', 'Are my rights protected here?']
+      : ['When does this document expire?', 'What are the key terms I should know?', 'Are there any renewal requirements?', 'What should I watch out for?'];
+    sugg.innerHTML = qs.map(function(q) {
+      return '<div class="chat-sq" onclick="sendSuggest(\'' + q.replace(/'/g, "&#39;") + '\')">' + q + '</div>';
+    }).join('');
+  } else {
+    // History exists or intro already seen — hide suggestions
+    sugg.innerHTML = '';
+    if (hasHistory) localStorage.setItem(introKey, '1');
+  }
 
   if (inputRow) inputRow.classList.remove('hidden');
   if (hint) hint.classList.remove('hidden');
+  scrollChatToBottom(false);
   document.getElementById('chat-input').focus();
 }
 
@@ -3875,6 +3887,16 @@ function showReminderGate() {
   document.body.appendChild(overlay);
 }
 
+
+function scrollChatToBottom(smooth) {
+  var el = document.getElementById('chat-messages');
+  if (!el) return;
+  if (smooth) {
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  } else {
+    el.scrollTop = el.scrollHeight;
+  }
+}
 
 function closeChat() {
   stopReadAloud();
@@ -4020,6 +4042,7 @@ async function sendChat() {
 
     removeTyping(tid);
     appendAIMsg(reply);
+    scrollChatToBottom(true);
     chatHistory.push({ role: 'user', content: msg });
     chatHistory.push({ role: 'assistant', content: reply });
 
