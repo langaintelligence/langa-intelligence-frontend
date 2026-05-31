@@ -4215,7 +4215,7 @@ async function startAnalysis() {
   processing = true;
 
   var body = document.getElementById('upload-modal-body');
-  var steps = ['Reading document structure','Extracting key clauses','Assessing financial risks','Generating plain-English summary','Building your protection report'];
+  var steps = ['Reading document structure','Extracting key clauses','Assessing financial risks','Generating plain-English summary','Building your document analysis'];
   var step = 0;
 
   body.innerHTML = '<div class="proc-card"><div class="spin"></div><div style="font-size:15px;font-weight:600;margin-bottom:5px;">Langa is reading your contract...</div><div style="font-size:12px;color:var(--muted);">Checking every clause for hidden risks</div><div class="proc-steps">' + steps.map(function(s,i){ return '<div class="ps" id="ps'+i+'"><div class="ps-dot"></div>'+s+'</div>'; }).join('') + '</div></div>';
