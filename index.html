@@ -115,6 +115,8 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 [data-theme="dark"] #solutions{background:#1E293B!important;}
 [data-theme="dark"] .login-left{background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%)!important;}
 [data-theme="dark"] .login-right{background:var(--white)!important;}
+[data-theme="dark"] #upgrade-overlay .modal-header{background:var(--white)!important;color:#F1F5F9!important;}
+[data-theme="dark"] #billing-overlay .modal-header{background:var(--white)!important;color:#F1F5F9!important;}
 
 
 
@@ -2274,7 +2276,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     <div class="modal-body">
       <div class="amber-info-banner" style="background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:12px 14px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div style="font-size:12px;color:#B45309;line-height:1.5;"><strong style="color:#92400E;">Payments coming soon.</strong> Try any plan free while we integrate payments — no card needed.</div>
+        <div class="amber-body" style="font-size:12px;color:#B45309;line-height:1.5;"><strong class="amber-title" style="color:#92400E;">Payments coming soon.</strong> Try any plan free while we integrate payments — no card needed.</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;">
         <!-- Pro -->
@@ -2290,7 +2292,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <button class="btn btn-primary btn-full btn-sm" style="margin-top:auto;padding-top:12px;" id="trial-pro-btn" onclick="activateTrialPlan('pro')">Try Pro free →</button>
         </div>
         <!-- Plus -->
-        <div style="padding:16px;background:var(--bg);border:2px solid var(--bdr);border-radius:var(--r);display:flex;flex-direction:column;">
+        <div style="padding:16px;background:var(--white);border:2px solid var(--bdr);border-radius:var(--r);display:flex;flex-direction:column;">
           <div style="font-weight:700;color:var(--navy);margin-bottom:2px;">Plus</div>
           <div style="font-size:22px;font-weight:700;color:var(--ink);margin-bottom:10px;">R99<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
           <div class="price-feature"><div class="pf-dot dot-yes"></div>100 documents/month</div>
@@ -2299,7 +2301,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <button class="btn btn-ghost btn-full btn-sm" style="margin-top:auto;padding-top:12px;" id="trial-plus-btn" onclick="activateTrialPlan('plus')">Try Plus free →</button>
         </div>
         <!-- Max -->
-        <div style="padding:16px;background:var(--bg);border:2px solid var(--bdr);border-radius:var(--r);display:flex;flex-direction:column;">
+        <div style="padding:16px;background:var(--white);border:2px solid var(--bdr);border-radius:var(--r);display:flex;flex-direction:column;">
           <div style="font-weight:700;color:var(--navy);margin-bottom:2px;">Max</div>
           <div style="font-size:22px;font-weight:700;color:var(--ink);margin-bottom:10px;">R199<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
           <div class="price-feature"><div class="pf-dot dot-yes"></div>Unlimited documents</div>
