@@ -2266,40 +2266,50 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 
 <!-- ═══════════ UPGRADE MODAL ═══════════ -->
 <div class="overlay hidden" id="upgrade-overlay" onclick="closeUpgradeIfBg(event)">
-  <div class="modal" style="max-width:560px;">
+  <div class="modal" style="max-width:680px;">
     <div class="modal-header" style="background:linear-gradient(135deg,var(--navy),#1E3A5F);">
       <div class="modal-title" style="color:#fff;">Upgrade Your Plan</div>
       <button class="modal-close" style="background:rgba(255,255,255,0.1);color:#fff;" onclick="closeUpgrade()">✕</button>
     </div>
     <div class="modal-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-        <div style="padding:16px;background:var(--bg);border-radius:var(--r);">
-          <div style="font-weight:700;color:var(--navy);margin-bottom:4px;">Freemium</div>
-          <div style="font-size:24px;font-weight:700;color:var(--muted);margin-bottom:12px;">R0<span style="font-size:13px;font-weight:400;">/mo</span></div>
-          <div class="price-feature"><div class="pf-dot dot-yes"></div>2 documents</div>
-          <div class="price-feature"><div class="pf-dot dot-yes"></div>Risk summaries</div>
-          <div class="price-feature"><div class="pf-dot dot-no"></div>No reminders</div>
-          <div class="price-feature"><div class="pf-dot dot-no"></div>No AI chat</div>
-        </div>
-        <div style="padding:16px;background:var(--blue-l);border:2px solid var(--blue);border-radius:var(--r);position:relative;">
-          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:999px;">Recommended</div>
-          <div style="font-weight:700;color:var(--navy);margin-bottom:4px;">Pro</div>
-          <div style="font-size:24px;font-weight:700;color:var(--blue);margin-bottom:12px;">R49<span style="font-size:13px;font-weight:400;">/mo</span></div>
-          <div class="price-feature"><div class="pf-dot dot-yes"></div>50 documents</div>
+      <div class="amber-info-banner" style="background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:12px 14px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div style="font-size:12px;color:#B45309;line-height:1.5;"><strong style="color:#92400E;">Payments coming soon.</strong> Try any plan free while we integrate payments — no card needed.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;">
+        <!-- Pro -->
+        <div style="padding:16px;background:var(--blue-l);border:2px solid var(--blue);border-radius:var(--r);position:relative;display:flex;flex-direction:column;">
+          <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:999px;white-space:nowrap;">Most Popular</div>
+          <div style="font-weight:700;color:var(--navy);margin-bottom:2px;">Pro</div>
+          <div style="font-size:22px;font-weight:700;color:var(--blue);margin-bottom:10px;">R49<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>50 documents/month</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>Full clause analysis</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>AI chat</div>
           <div class="price-feature"><div class="pf-dot dot-yes"></div>Smart reminders</div>
-          <div class="price-feature"><div class="pf-dot dot-yes"></div>AI chat per contract</div>
-          <div class="price-feature"><div class="pf-dot dot-yes"></div>Full dashboard</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>Insights dashboard</div>
+          <button class="btn btn-primary btn-full btn-sm" style="margin-top:auto;padding-top:12px;" id="trial-pro-btn" onclick="activateTrialPlan('pro')">Try Pro free →</button>
+        </div>
+        <!-- Plus -->
+        <div style="padding:16px;background:var(--bg);border:2px solid var(--bdr);border-radius:var(--r);display:flex;flex-direction:column;">
+          <div style="font-weight:700;color:var(--navy);margin-bottom:2px;">Plus</div>
+          <div style="font-size:22px;font-weight:700;color:var(--ink);margin-bottom:10px;">R99<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>100 documents/month</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>All Pro features</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>Priority support</div>
+          <button class="btn btn-ghost btn-full btn-sm" style="margin-top:auto;padding-top:12px;" id="trial-plus-btn" onclick="activateTrialPlan('plus')">Try Plus free →</button>
+        </div>
+        <!-- Max -->
+        <div style="padding:16px;background:var(--bg);border:2px solid var(--bdr);border-radius:var(--r);display:flex;flex-direction:column;">
+          <div style="font-weight:700;color:var(--navy);margin-bottom:2px;">Max</div>
+          <div style="font-size:22px;font-weight:700;color:var(--ink);margin-bottom:10px;">R199<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>Unlimited documents</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>All Plus features</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>Up to 5 user accounts</div>
+          <div class="price-feature"><div class="pf-dot dot-yes"></div>Shared dashboard</div>
+          <button class="btn btn-ghost btn-full btn-sm" style="margin-top:auto;padding-top:12px;" id="trial-max-btn" onclick="activateTrialPlan('max')">Try Max free →</button>
         </div>
       </div>
-      <div class="amber-info-banner" style="background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div>
-          <div class="amber-title" style="font-size:13px;font-weight:600;color:#92400E;margin-bottom:3px;">Payments coming soon</div>
-          <div class="amber-body" style="font-size:12px;color:#B45309;line-height:1.5;">We're integrating secure payments. In the meantime, experience all Pro features completely free — no card needed.</div>
-        </div>
-      </div>
-      <button class="btn btn-primary btn-full btn-lg" id="trial-pro-btn" onclick="activateTrialPro()">Experience Pro Features Now →</button>
-      <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">No payment required · Full Pro access</div>
+      <div style="text-align:center;font-size:12px;color:var(--muted);">No payment required · Cancel anytime · Prices in ZAR</div>
     </div>
   </div>
 </div>
@@ -5160,25 +5170,28 @@ function showMonthlyLimitModal() {
 function showUpgradeModal() { show('upgrade-overlay'); }
 function closeUpgrade() { hide('upgrade-overlay'); }
 function closeUpgradeIfBg(e) { if(e.target===document.getElementById('upgrade-overlay')) closeUpgrade(); }
-async function activateTrialPro() {
-  var btn = document.getElementById('trial-pro-btn');
+async function activateTrialPlan(plan) {
+  var btnId = 'trial-' + plan + '-btn';
+  var btn = document.getElementById(btnId);
+  var lbl = _planLabel(plan);
   setLoading(btn, true, 'Activating…');
   try {
-    await api('POST', '/billing/change-plan', { plan: 'pro' });
-    currentUser.plan = 'pro';
-    currentUser.maxDocs = planMaxDocs('pro');
+    await api('POST', '/billing/change-plan', { plan: plan });
+    currentUser.plan = plan;
+    currentUser.maxDocs = planMaxDocs(plan);
     localStorage.setItem('langa_user', JSON.stringify(currentUser));
-    document.getElementById('nav-plan').textContent = 'Pro';
-    document.getElementById('nav-plan').className = 'plan-chip plan-pro';
-    _syncAvatarMenuPlan('Pro');
+    var planEl = document.getElementById('nav-plan');
+    planEl.textContent = lbl;
+    planEl.className = 'plan-chip plan-pro';
+    _syncAvatarMenuPlan(lbl);
     closeUpgrade();
     renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
-    toast('Welcome to Langa Pro!', 'Unlimited chat, smart reminders and 50 documents are now unlocked.', 'success', 6000);
-    addNotification('success', 'Welcome to Langa Pro!', 'Unlimited AI chat and smart reminders are now active on all your contracts.', true);
+    toast('Welcome to Langa ' + lbl + '!', _planLabel(plan) + ' features are now active on your account.', 'success', 6000);
+    addNotification('success', 'Welcome to Langa ' + lbl + '!', 'AI chat, smart reminders and your document allowance are now active.', true);
   } catch(e) {
     toast('Could not activate', apiErrMsg(e), 'warn');
   } finally {
-    setLoading(btn, false, 'Experience Pro Features Now →');
+    setLoading(btn, false, 'Try ' + lbl + ' free →');
   }
 }
 // ══════════════════════════════════════════
