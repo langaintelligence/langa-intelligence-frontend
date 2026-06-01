@@ -514,7 +514,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .ss-step.active .ss-num{background:var(--blue);color:#fff;}
 .ss-step.done .ss-num{background:var(--green);color:#fff;}
 .ss-line{flex:1;height:1px;background:var(--bdr);}
-.plan-select-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;}
+.plan-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
 .plan-opt{border:2px solid var(--bdr);border-radius:var(--r);padding:16px;cursor:pointer;transition:all 0.15s;position:relative;}
 .plan-opt:hover{border-color:var(--blue-m);}
 .plan-opt.selected{border-color:var(--blue);background:var(--blue-l);}
@@ -1650,38 +1650,34 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
           <thead>
             <tr style="background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;">
-              <th style="padding:14px 16px;text-align:left;font-weight:600;width:22%;">Feature</th>
+              <th style="padding:14px 16px;text-align:left;font-weight:600;width:24%;">Feature</th>
               <th style="padding:14px 16px;text-align:center;font-weight:600;">Freemium</th>
               <th style="padding:14px 16px;text-align:center;font-weight:700;background:rgba(255,255,255,0.15);">Pro ⭐</th>
-              <th style="padding:14px 16px;text-align:center;font-weight:600;">Family</th>
-              <th style="padding:14px 16px;text-align:center;font-weight:600;">SME</th>
-              <th style="padding:14px 16px;text-align:center;font-weight:600;">Enterprise</th>
+              <th style="padding:14px 16px;text-align:center;font-weight:600;">Plus</th>
+              <th style="padding:14px 16px;text-align:center;font-weight:600;">Max</th>
             </tr>
           </thead>
           <tbody>
             <tr style="border-bottom:1px solid var(--bdr);">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Document uploads</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">2 total</td>
-              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">Unlimited</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited (5 users)</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited (team)</td>
+              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">50/month</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">100/month</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited</td>
             </tr>
             <tr class="lp-table-alt" style="border-bottom:1px solid var(--bdr);background:#FAFAFA;">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">AI summaries</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">Basic summary</td>
               <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">Full clause analysis</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Multi-user</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Advanced analytics</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Custom models</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Full clause analysis</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Full clause analysis</td>
             </tr>
             <tr style="border-bottom:1px solid var(--bdr);">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Ask Langa AI chat</td>
               <td style="padding:12px 16px;text-align:center;color:var(--red);">✕</td>
-              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--green);font-weight:700;">✓ Per contract</td>
+              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--green);font-weight:700;">✓</td>
               <td style="padding:12px 16px;text-align:center;color:var(--green);">✓</td>
               <td style="padding:12px 16px;text-align:center;color:var(--green);">✓</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--green);">✓ Custom</td>
             </tr>
             <tr class="lp-table-alt" style="border-bottom:1px solid var(--bdr);background:#FAFAFA;">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Reminders</td>
@@ -1689,43 +1685,39 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
               <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">Unlimited</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Workflow automation</td>
             </tr>
             <tr style="border-bottom:1px solid var(--bdr);">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Insights dashboard</td>
               <td style="padding:12px 16px;text-align:center;color:var(--red);">✕</td>
               <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--green);font-weight:700;">✓</td>
               <td style="padding:12px 16px;text-align:center;color:var(--green);">✓</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--green);">✓ Advanced</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--green);">✓ Custom</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--green);">✓</td>
             </tr>
             <tr class="lp-table-alt" style="border-bottom:1px solid var(--bdr);background:#FAFAFA;">
-              <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Team access</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--red);">✕</td>
-              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--red);">✕</td>
+              <td style="padding:12px 16px;font-weight:500;color:var(--ink);">User accounts</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">1</td>
+              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--muted);">1</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">1</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">Up to 5</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Up to 15</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited</td>
             </tr>
             <tr>
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Support</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">Email only</td>
               <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">Priority</td>
               <td style="padding:12px 16px;text-align:center;color:var(--muted);">Priority</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Live chat</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Dedicated manager</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Priority</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pricing Cards -->
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
         <!-- Freemium -->
         <div style="border:2px solid var(--bdr);border-radius:var(--r);padding:24px;background:var(--white);transition:all 0.2s;position:relative;overflow:hidden;" onmouseover="this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
           <div style="position:absolute;top:12px;right:12px;opacity:0.05;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
           <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Freemium</h3>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Everyday users</p>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Try it out</p>
           <div style="font-size:26px;font-weight:700;color:var(--ink);margin-bottom:2px;">Free</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">forever</div>
           <button class="btn btn-ghost btn-full btn-sm" onclick="showSignup()" style="margin-bottom:16px;">Start Free</button>
@@ -1737,67 +1729,54 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             <div style="color:var(--subtle);">✕ No AI chat</div>
           </div>
         </div>
-        <!-- Premium -->
+        <!-- Pro -->
         <div class="lp-pro-card" style="border:2px solid #06B6D4;border-radius:var(--r);padding:24px;padding-top:32px;background:linear-gradient(135deg,#F0FDFE,#EFF6FF);position:relative;transition:all 0.2s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(6,182,212,0.25)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
-          <div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;font-size:10px;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap;z-index:1;box-shadow:0 2px 8px rgba(6,182,212,0.4);">⭐ Popular</div>
+          <div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;font-size:10px;font-weight:700;padding:4px 14px;border-radius:999px;white-space:nowrap;z-index:1;box-shadow:0 2px 8px rgba(6,182,212,0.4);">⭐ Most Popular</div>
           <div style="position:absolute;top:12px;right:12px;opacity:0.06;overflow:hidden;width:56px;height:56px;border-radius:4px;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
           <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Pro</h3>
           <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Individuals</p>
           <div style="font-size:26px;font-weight:700;color:var(--navy);margin-bottom:2px;">R49<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 50 documents</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 50 documents/month</div>
           <button class="btn btn-primary btn-full btn-sm" onclick="showSignup()" style="margin-bottom:16px;">Get Started</button>
           <div style="font-size:11px;color:var(--body);display:flex;flex-direction:column;gap:5px;">
-            <div>✓ 50 documents</div>
+            <div>✓ 50 documents/month</div>
             <div>✓ Full clause analysis</div>
             <div>✓ Ask Langa AI chat</div>
             <div>✓ Smart reminders</div>
             <div>✓ Insights dashboard</div>
           </div>
         </div>
-        <!-- Family -->
+        <!-- Plus -->
         <div style="border:2px solid var(--bdr);border-radius:var(--r);padding:24px;background:var(--white);position:relative;overflow:hidden;transition:all 0.2s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
-          <div style="position:absolute;top:12px;right:12px;opacity:0.05;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Family</h3>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Households</p>
-          <div style="font-size:26px;font-weight:700;color:var(--ink);margin-bottom:2px;">R199<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">5 users · R39.80/user</div>
+          <div style="position:absolute;top:12px;right:12px;opacity:0.05;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M12 11v6M9 14h6"/></svg></div>
+          <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Plus</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Power users</p>
+          <div style="font-size:26px;font-weight:700;color:var(--ink);margin-bottom:2px;">R99<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 100 documents/month</div>
           <button class="btn btn-ghost btn-full btn-sm" onclick="showSignup()" style="margin-bottom:16px;">Get Started</button>
           <div style="font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:5px;">
-            <div>✓ 50 documents</div>
-            <div>✓ All Premium features</div>
-            <div>✓ 5 user accounts</div>
+            <div>✓ 100 documents/month</div>
+            <div>✓ All Pro features</div>
+            <div>✓ Priority support</div>
+          </div>
+        </div>
+        <!-- Max -->
+        <div style="border:2px solid var(--bdr);border-radius:var(--r);padding:24px;background:var(--white);position:relative;overflow:hidden;transition:all 0.2s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
+          <div style="position:absolute;top:12px;right:12px;opacity:0.05;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Max</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Households</p>
+          <div style="font-size:26px;font-weight:700;color:var(--ink);margin-bottom:2px;">R199<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">Up to 5 users · R39.80/user</div>
+          <button class="btn btn-ghost btn-full btn-sm" onclick="showSignup()" style="margin-bottom:16px;">Get Started</button>
+          <div style="font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:5px;">
+            <div>✓ Unlimited documents</div>
+            <div>✓ All Plus features</div>
+            <div>✓ Up to 5 user accounts</div>
             <div>✓ Shared dashboard</div>
           </div>
         </div>
-        <!-- SME -->
-        <div style="border:2px solid var(--bdr);border-radius:var(--r);padding:24px;background:var(--white);position:relative;overflow:hidden;transition:all 0.2s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
-          <div style="position:absolute;top:12px;right:12px;opacity:0.05;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="9" y1="22" x2="9" y2="2"/></svg></div>
-          <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">SME</h3>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Small businesses</p>
-          <div style="font-size:14px;color:var(--muted);margin-bottom:18px;line-height:1.5;">Tailored solutions for your growing business</div>
-          <button class="btn btn-ghost btn-full btn-sm" style="border-color:#06B6D4;color:#0891B2;margin-bottom:16px;" onclick="toast('SME Plan','Contact us at hello@langa.co.za for SME pricing.','info',5000)">Find out more</button>
-          <div style="font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:5px;">
-            <div>✓ Up to 15 users</div>
-            <div>✓ Advanced analytics</div>
-            <div>✓ Live chat support</div>
-            <div>✓ HR document tools</div>
-          </div>
-        </div>
-        <!-- Enterprise -->
-        <div style="border:2px solid var(--bdr);border-radius:var(--r);padding:24px;background:var(--white);position:relative;overflow:hidden;transition:all 0.2s;" onmouseover="this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='none';this.style.transform='none'">
-          <div style="position:absolute;top:12px;right:12px;opacity:0.05;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="6" x2="23" y2="6"/><line x1="1" y1="12" x2="23" y2="12"/><line x1="1" y1="18" x2="23" y2="18"/></svg></div>
-          <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Enterprise</h3>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Corporates</p>
-          <div style="font-size:14px;color:var(--muted);margin-bottom:18px;line-height:1.5;">Custom solutions with dedicated support</div>
-          <button class="btn btn-ghost btn-full btn-sm" style="border-color:#06B6D4;color:#0891B2;margin-bottom:16px;" onclick="toast('Enterprise Plan','Contact us at enterprise@langa.co.za for custom pricing.','info',5000)">Find out more</button>
-          <div style="font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:5px;">
-            <div>✓ Unlimited users</div>
-            <div>✓ Custom AI models</div>
-            <div>✓ API access</div>
-            <div>✓ Dedicated manager</div>
-          </div>
-        </div>
       </div>
+      <p style="text-align:center;font-size:11px;color:var(--subtle);margin-top:20px;">All paid plans billed monthly · Cancel anytime · Prices in ZAR</p>
     </div>
   </section>
 
@@ -2289,7 +2268,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 <div class="overlay hidden" id="upgrade-overlay" onclick="closeUpgradeIfBg(event)">
   <div class="modal" style="max-width:560px;">
     <div class="modal-header" style="background:linear-gradient(135deg,var(--navy),#1E3A5F);">
-      <div class="modal-title" style="color:#fff;">Upgrade to Langa Pro</div>
+      <div class="modal-title" style="color:#fff;">Upgrade Your Plan</div>
       <button class="modal-close" style="background:rgba(255,255,255,0.1);color:#fff;" onclick="closeUpgrade()">✕</button>
     </div>
     <div class="modal-body">
@@ -2527,11 +2506,17 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             <div class="plan-opt-price">R49<span>/mo</span></div>
             <div class="plan-opt-feat">50 documents<br>Smart reminders<br>AI chat per contract</div>
           </div>
-          <div class="plan-opt" id="plan-opt-family" onclick="selectPlan('family')">
+          <div class="plan-opt" id="plan-opt-plus" onclick="selectPlan('plus')">
             <div class="plan-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="plan-opt-name">Family</div>
+            <div class="plan-opt-name">Plus</div>
+            <div class="plan-opt-price">R99<span>/mo</span></div>
+            <div class="plan-opt-feat">100 documents/month<br>All Pro features<br>Priority support</div>
+          </div>
+          <div class="plan-opt" id="plan-opt-max" onclick="selectPlan('max')">
+            <div class="plan-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="plan-opt-name">Max</div>
             <div class="plan-opt-price">R199<span>/mo</span></div>
-            <div class="plan-opt-feat">5 users · R39.80/user<br>100 documents shared<br>All Pro features</div>
+            <div class="plan-opt-feat">Up to 5 users<br>Unlimited documents<br>Shared dashboard</div>
           </div>
         </div>
         <div style="display:flex;gap:10px;">
@@ -2984,7 +2969,7 @@ function incrementMonthlyUploads() {
 }
 
 function getMonthlyLimit() {
-  // Freemium: 2/month, Pro: unlimited, Family: unlimited (5 users)
+  // Freemium: 2, Pro: 50/month, Plus: 100/month, Max: unlimited
   return currentUser && currentUser.plan === 'pro' ? 10 : 2;
 }
 
@@ -3007,7 +2992,8 @@ const BASE_DOCS_PRO = [
 let currentUser = null;
 let userDocs = [];
 
-function planMaxDocs(plan) { return plan === 'family' ? 100 : plan === 'pro' ? 50 : 2; }
+function planMaxDocs(plan) { return plan === 'max' ? 999 : plan === 'plus' ? 100 : plan === 'pro' ? 50 : 2; }
+function _planLabel(plan) { return plan === 'pro' ? 'Pro' : plan === 'plus' ? 'Plus' : plan === 'max' ? 'Max' : 'Freemium'; }
 let currentDoc = null;
 let chatHistory = [];
 let chatDocContext = null;
@@ -3149,9 +3135,9 @@ async function doLogin() {
         document.getElementById('nav-avatar').textContent = currentUser.avatar;
         document.getElementById('nav-name').textContent = currentUser.name;
         var planEl = document.getElementById('nav-plan');
-        planEl.textContent = currentUser.plan === 'pro' ? 'Pro' : 'Freemium';
-        planEl.className = 'plan-chip ' + (currentUser.plan === 'pro' ? 'plan-pro' : 'plan-free');
-        _syncAvatarMenuPlan(currentUser.plan === 'pro' ? 'Pro' : 'Freemium');
+        planEl.textContent = _planLabel(currentUser.plan);
+        planEl.className = 'plan-chip ' + (currentUser.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
+        _syncAvatarMenuPlan(_planLabel(currentUser.plan));
         document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
         // Only apply server preference when explicitly set to true.
         // Avoid overriding a locally-stored system preference with the
@@ -3321,9 +3307,9 @@ function initApp() {
   document.getElementById('nav-avatar').textContent = u.avatar;
   document.getElementById('nav-name').textContent = u.name;
   const planEl = document.getElementById('nav-plan');
-  planEl.textContent = u.plan === 'pro' ? 'Pro' : 'Freemium';
-  planEl.className = 'plan-chip ' + (u.plan === 'pro' ? 'plan-pro' : 'plan-free');
-  _syncAvatarMenuPlan(u.plan === 'pro' ? 'Pro' : 'Freemium');
+  planEl.textContent = _planLabel(u.plan);
+  planEl.className = 'plan-chip ' + (u.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
+  _syncAvatarMenuPlan(_planLabel(u.plan));
   document.getElementById('dash-name').textContent = u.name.split(' ')[0];
   renderSidebar();
   renderStats();
@@ -3342,10 +3328,10 @@ function renderSidebar() {
   document.getElementById('plan-bar').style.width = pct + '%';
   document.getElementById('plan-box-sub').textContent = cnt + ' of ' + max + ' documents used';
   const boxInner = document.getElementById('plan-box-inner');
-  const isPro = currentUser.plan === 'pro';
-  boxInner.className = 'plan-inner ' + (isPro ? 'pro' : 'free');
-  document.getElementById('plan-box-title').textContent = isPro ? 'Pro Plan' : 'Freemium Plan';
-  document.getElementById('upgrade-link').style.display = isPro ? 'none' : 'block';
+  const isPaid = currentUser.plan !== 'freemium';
+  boxInner.className = 'plan-inner ' + (isPaid ? 'pro' : 'free');
+  document.getElementById('plan-box-title').textContent = _planLabel(currentUser.plan) + ' Plan';
+  document.getElementById('upgrade-link').style.display = isPaid ? 'none' : 'block';
 
   const sb = document.getElementById('sidebar-docs');
   sb.innerHTML = userDocs.map(function(d) {
@@ -3435,8 +3421,8 @@ function renderUploadArea() {
     area.innerHTML = `
       <div class="limit-banner" style="margin-bottom:20px;">
         <div class="lb-title">Freemium limit reached</div>
-        <div class="lb-sub">You've used both your free document slots. Upgrade to Pro to analyse up to 50 documents, get smart reminders, and unlock AI chat.</div>
-        <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro — R49/month</button>
+        <div class="lb-sub">You've used both your free document slots. Upgrade to Pro (R49/mo) or higher to unlock more uploads, smart reminders, and AI chat.</div>
+        <button class="btn btn-primary" onclick="showUpgradeModal()">See upgrade options →</button>
       </div>`;
   } else {
     area.innerHTML = `<div style="margin-bottom:20px;"><button class="btn btn-primary" onclick="openUpload()">+ Upload Document</button></div>`;
@@ -4990,22 +4976,24 @@ function initSettings() {
   document.getElementById('settings-name-input').value = u.name;
   document.getElementById('settings-email-input').value = u.email;
 
-  var isPro = u.plan === 'pro';
+  var isPaid = u.plan !== 'freemium';
+  var planLbl = _planLabel(u.plan);
+  var planPrices = { pro: 'R49', plus: 'R99', max: 'R199', freemium: 'R0' };
   document.getElementById('settings-plan-badge').innerHTML =
-    '<span class="plan-chip ' + (isPro ? 'plan-pro' : 'plan-free') + '" style="display:inline-flex;">' + (isPro ? 'Pro' : 'Freemium') + '</span>';
+    '<span class="plan-chip ' + (isPaid ? 'plan-pro' : 'plan-free') + '" style="display:inline-flex;">' + planLbl + '</span>';
 
   document.getElementById('settings-plan-detail').innerHTML =
     '<div style="margin-bottom:14px;">' +
-      '<div style="font-size:22px;font-weight:700;color:var(--blue);margin-bottom:2px;">' + (isPro ? 'R49' : 'R0') + '<span style="font-size:12px;font-weight:400;color:var(--muted);">/month</span></div>' +
-      '<div style="font-size:12px;color:var(--muted);">' + (isPro ? 'Langa Pro — full access' : 'Freemium — limited access') + '</div>' +
+      '<div style="font-size:22px;font-weight:700;color:var(--blue);margin-bottom:2px;">' + (planPrices[u.plan] || 'R0') + '<span style="font-size:12px;font-weight:400;color:var(--muted);">/month</span></div>' +
+      '<div style="font-size:12px;color:var(--muted);">' + (isPaid ? 'Langa ' + planLbl + ' — full access' : 'Freemium — limited access') + '</div>' +
     '</div>' +
     '<div style="height:4px;background:var(--bdr);border-radius:999px;overflow:hidden;margin-bottom:8px;">' +
       '<div style="height:100%;width:' + Math.round(userDocs.length/u.maxDocs*100) + '%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:999px;"></div>' +
     '</div>' +
     '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">' + userDocs.length + ' of ' + u.maxDocs + ' documents used</div>' +
-    (isPro
+    (isPaid
       ? '<button class="btn btn-ghost btn-full" style="font-size:12px;" onclick="showBillingModal()">Manage billing →</button>'
-      : '<button class="btn btn-primary btn-full" onclick="showUpgradeModal()">Upgrade to Pro — R49/month</button>');
+      : '<button class="btn btn-primary btn-full" onclick="showUpgradeModal()">See upgrade options →</button>');
 }
 
 async function saveSettings() {
@@ -5157,9 +5145,9 @@ function showMonthlyLimitModal() {
         '</div>' +
         (isPro ? '' :
           '<div style="background:linear-gradient(135deg,#EFF6FF,#ECFEFF);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px;margin-bottom:16px;">' +
-            '<div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:6px;">Upgrade to Pro for more uploads</div>' +
-            '<div style="font-size:12px;color:#334155;line-height:1.6;margin-bottom:10px;">Pro gives you unlimited uploads — plus unlimited AI chat, smart reminders and the full insights dashboard.</div>' +
-            '<button onclick="closeMonthlyLimit();showUpgradeModal();" style="width:100%;height:40px;background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Sora,sans-serif;">Upgrade to Pro — R49/month</button>' +
+            '<div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:6px;">Upgrade for more uploads</div>' +
+            '<div style="font-size:12px;color:#334155;line-height:1.6;margin-bottom:10px;">Pro (R49/mo) gives you 50 uploads, Plus (R99/mo) gives you 100, and Max (R199/mo) gives you unlimited — all with AI chat, smart reminders and the full insights dashboard.</div>' +
+            '<button onclick="closeMonthlyLimit();showUpgradeModal();" style="width:100%;height:40px;background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Sora,sans-serif;">See upgrade options →</button>' +
           '</div>'
         ) +
         '<button onclick="closeMonthlyLimit();" style="width:100%;height:38px;background:none;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;color:#64748B;cursor:pointer;font-family:Sora,sans-serif;">Got it, come back ' + nextMonth + '</button>' +
@@ -5255,20 +5243,22 @@ function renderBillingOverview() {
 function renderBillingPlans() {
   var container = document.getElementById('bill-plan-cards');
   var current = _billSummary ? _billSummary.plan : (currentUser ? currentUser.plan : 'freemium');
+  var planOrder = ['freemium','pro','plus','max'];
   var plans = [
-    { key:'freemium', name:'Freemium', price:'Free', desc:'Perfect for getting started', features:['2 documents','Basic risk summaries','Clause highlights'], missing:['Smart reminders','AI chat','Full dashboard'] },
-    { key:'pro',      name:'Pro',      price:'R49/mo', desc:'Full access for individuals', features:['50 documents','Full clause analysis','AI chat per contract','Smart reminders','Insights dashboard'], missing:[] },
-    { key:'family',   name:'Family',   price:'R199/mo', desc:'For households — up to 5 users', features:['5 user accounts','100 documents shared','All Pro features','Shared dashboard'], missing:[] },
+    { key:'freemium', name:'Freemium', price:'Free', desc:'Perfect for getting started', features:['2 documents','Basic AI summaries','Clause highlights'], missing:['Smart reminders','AI chat','Full dashboard'] },
+    { key:'pro',      name:'Pro',      price:'R49/mo', desc:'Full access for individuals', features:['50 documents/month','Full clause analysis','AI chat','Smart reminders','Insights dashboard'], missing:[] },
+    { key:'plus',     name:'Plus',     price:'R99/mo', desc:'More capacity, same great features', features:['100 documents/month','All Pro features','Priority support'], missing:[] },
+    { key:'max',      name:'Max',      price:'R199/mo', desc:'For households — up to 5 users', features:['Unlimited documents','Up to 5 user accounts','Shared dashboard','All Plus features'], missing:[] },
   ];
   container.innerHTML = plans.map(function(p) {
     var isCurrent = p.key === current;
-    var isDowngrade = (current === 'pro' && p.key === 'freemium') || (current === 'family' && p.key !== 'family');
-    var isUpgrade = !isCurrent && !isDowngrade;
+    var currentIdx = planOrder.indexOf(current);
+    var pIdx = planOrder.indexOf(p.key);
+    var isDowngrade = !isCurrent && pIdx < currentIdx;
+    var isUpgrade = !isCurrent && pIdx > currentIdx;
     var btn = isCurrent
       ? '<div style="font-size:12px;font-weight:600;color:var(--blue);padding:8px 0;text-align:center;">✓ Current plan</div>'
-      : (p.key === 'family'
-        ? '<button class="btn btn-ghost btn-full btn-sm" style="margin-top:10px;" onclick="toast(\'Family Plan\',\'Contact us at hello@langai.co.za to set up a family plan.\',\'info\',6000)">Contact us →</button>'
-        : '<button class="btn btn-full btn-sm ' + (isUpgrade ? 'btn-primary' : 'btn-ghost') + '" style="margin-top:10px;" onclick="doBillChangePlan(\'' + p.key + '\')">' + (isUpgrade ? 'Upgrade' : 'Downgrade') + ' to ' + p.name + '</button>');
+      : '<button class="btn btn-full btn-sm ' + (isUpgrade ? 'btn-primary' : 'btn-ghost') + '" style="margin-top:10px;" onclick="doBillChangePlan(\'' + p.key + '\')">' + (isUpgrade ? 'Upgrade' : 'Downgrade') + ' to ' + p.name + '</button>';
     return '<div class="bill-plan-card ' + (isCurrent ? 'current' : '') + '">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
         '<div style="font-size:14px;font-weight:700;color:var(--navy);">' + p.name + '</div>' +
@@ -5341,7 +5331,7 @@ function renderBillingHistory() {
 }
 
 async function doBillChangePlan(plan) {
-  var label = plan === 'pro' ? 'Pro (R49/mo)' : plan === 'freemium' ? 'Freemium (Free)' : 'Family (R199/mo)';
+  var label = plan === 'pro' ? 'Pro (R49/mo)' : plan === 'plus' ? 'Plus (R99/mo)' : plan === 'max' ? 'Max (R199/mo)' : 'Freemium (Free)';
   if (plan === 'freemium' && currentUser.plan !== 'freemium') {
     if (!confirm('Downgrade to Freemium? You will lose Pro features at the end of your billing period.')) return;
   }
@@ -5353,9 +5343,9 @@ async function doBillChangePlan(plan) {
     _billSummary.plan_name = res.plan_name;
     _billSummary.price_zar = res.price_zar;
     _billSummary.billing_description = res.plan === 'freemium' ? 'Free forever' : 'Billed monthly';
-    document.getElementById('nav-plan').textContent = res.plan === 'pro' ? 'Pro' : res.plan === 'family' ? 'Family' : 'Freemium';
+    document.getElementById('nav-plan').textContent = res.plan === 'pro' ? 'Pro' : res.plan === 'plus' ? 'Plus' : res.plan === 'max' ? 'Max' : 'Freemium';
     document.getElementById('nav-plan').className = 'plan-chip ' + (res.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
-    _syncAvatarMenuPlan(res.plan === 'pro' ? 'Pro' : res.plan === 'family' ? 'Family' : 'Freemium');
+    _syncAvatarMenuPlan(res.plan === 'pro' ? 'Pro' : res.plan === 'plus' ? 'Plus' : res.plan === 'max' ? 'Max' : 'Freemium');
     renderBillingOverview(); renderBillingPlans(); renderStats(); renderSidebar();
     showBillTab('overview');
     toast('Plan updated', 'You are now on the ' + label + ' plan.', 'success', 5000);
@@ -5702,6 +5692,8 @@ function selectPlan(plan) {
   selectedPlan = plan;
   document.getElementById('plan-opt-free').classList.toggle('selected', plan === 'freemium');
   document.getElementById('plan-opt-pro').classList.toggle('selected', plan === 'pro');
+  document.getElementById('plan-opt-plus').classList.toggle('selected', plan === 'plus');
+  document.getElementById('plan-opt-max').classList.toggle('selected', plan === 'max');
 }
 
 function toggleNotifOpt(id) {
@@ -6379,9 +6371,9 @@ document.addEventListener('DOMContentLoaded', async function() {
           document.getElementById('nav-avatar').textContent = currentUser.avatar;
           document.getElementById('nav-name').textContent = currentUser.name;
           var planEl = document.getElementById('nav-plan');
-          planEl.textContent = currentUser.plan === 'pro' ? 'Pro' : 'Freemium';
-          planEl.className = 'plan-chip ' + (currentUser.plan === 'pro' ? 'plan-pro' : 'plan-free');
-          _syncAvatarMenuPlan(currentUser.plan === 'pro' ? 'Pro' : 'Freemium');
+          planEl.textContent = _planLabel(currentUser.plan);
+          planEl.className = 'plan-chip ' + (currentUser.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
+          _syncAvatarMenuPlan(_planLabel(currentUser.plan));
           document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
         }).catch(function(){}),
         _docsPromise,
