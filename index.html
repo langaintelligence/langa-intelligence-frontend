@@ -4770,13 +4770,19 @@ function renderReminders() {
     '<div class="rsb-card"><div class="rsb-val c-blue">'  + (groups.upcoming.length + groups.scheduled.length) + '</div><div class="rsb-lbl">Upcoming</div></div>' +
   '</div>';
 
+  var _freemiumEmailNudge = (currentUser && currentUser.plan === 'freemium')
+    ? '<div style="margin-top:16px;padding:10px 14px;border-radius:8px;background:var(--blue-l);font-size:13px;color:var(--muted);text-align:center;">' +
+        '📧 Want email reminders? <span onclick="showUpgradeModal()" style="cursor:pointer;color:var(--blue);font-weight:600;text-decoration:underline;text-underline-offset:2px;">Upgrade to Pro</span>' +
+      '</div>'
+    : '';
+
   if (!totalCount) {
     container.innerHTML =
       '<div style="text-align:center;padding:60px 20px;color:var(--muted);">' +
         '<div style="font-size:48px;margin-bottom:14px;opacity:0.3;">🔔</div>' +
         '<div style="font-size:16px;font-weight:600;margin-bottom:6px;">No reminders set yet</div>' +
         '<div style="font-size:13px;">Ask Langa in chat to set one! Try: <em>&ldquo;Remind me to call them tomorrow&rdquo;</em></div>' +
-      '</div>';
+      '</div>' + _freemiumEmailNudge;
     return;
   }
 
@@ -4814,7 +4820,8 @@ function renderReminders() {
     buildSection(groups['due-soon'], CFG['due-soon']) +
     buildSection(groups.upcoming,  CFG.upcoming) +
     buildSection(groups.scheduled, CFG.scheduled) +
-    buildSection(groups.past,      CFG.past);
+    buildSection(groups.past,      CFG.past) +
+    _freemiumEmailNudge;
 }
 
 // ═══════════════════════════════════
