@@ -2248,7 +2248,6 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       <textarea class="chat-input" id="chat-input" rows="1" placeholder="Ask me anything about this document..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}" oninput="_resizeChatInput(this)"></textarea>
       <button class="btn btn-primary" id="chat-send" onclick="sendChat()">Send</button>
     </div>
-    <div class="chat-hint" id="chat-hint">Press Enter to send · Shift+Enter for new line</div>
     <div class="chat-disclaimer">AI can make mistakes. Always verify important information with a qualified professional.</div>
     <div class="chat-powered">Powered by <span style="color:rgba(255,255,255,0.55);">Langa Intelligence</span></div>
   </div>
@@ -3487,9 +3486,9 @@ function renderUploadArea() {
   if (overLimit) {
     if (currentUser.graceExpired) {
       bannerHTML =
-        '<div class="limit-banner" style="margin-bottom:16px;background:var(--red-l,#FEF2F2);border-color:var(--red,#DC2626);">' +
-          '<div class="lb-title" style="color:var(--red,#DC2626);">&#128194; Some of your documents have been archived</div>' +
-          '<div class="lb-sub">Upgrade to Essential to restore full access instantly.</div>' +
+        '<div style="margin-bottom:16px;background:transparent;border:1px solid #EF4444;border-radius:12px;padding:16px 20px;">' +
+          '<div style="font-size:14px;font-weight:600;color:var(--ink,#F1F5F9);margin-bottom:6px;">&#128194; Some of your documents have been archived</div>' +
+          '<div style="font-size:13px;color:var(--muted,#94A3B8);margin-bottom:14px;line-height:1.5;">Upgrade to Essential to restore full access instantly.</div>' +
           '<button class="btn btn-primary" onclick="showUpgradeModal()">Restore My Documents &#8212; R49/month</button>' +
         '</div>';
     } else {
@@ -3498,9 +3497,9 @@ function renderUploadArea() {
       var _docCnt = userDocs.length;
       var _planNm = _planLabel(currentUser.plan);
       bannerHTML =
-        '<div class="limit-banner" style="margin-bottom:16px;background:var(--amber-l,#FFFBEB);border-color:var(--amber,#D97706);">' +
-          '<div class="lb-title" style="color:#92400E;">&#128194; You have ' + _docCnt + ' documents but your ' + _planNm + ' plan includes ' + _planLim + '</div>' +
-          '<div class="lb-sub">Your older documents will be archived in ' + _daysLeft + ' day' + (_daysLeft !== 1 ? 's' : '') + '. Upgrade to Essential to keep full access.</div>' +
+        '<div style="margin-bottom:16px;background:transparent;border:1px solid #00BFFF;border-radius:12px;padding:16px 20px;">' +
+          '<div style="font-size:14px;font-weight:600;color:var(--ink,#F1F5F9);margin-bottom:6px;">&#128194; You have ' + _docCnt + ' documents but your ' + _planNm + ' plan includes ' + _planLim + '</div>' +
+          '<div style="font-size:13px;color:var(--muted,#94A3B8);margin-bottom:14px;line-height:1.5;">Your older documents will be archived in ' + _daysLeft + ' day' + (_daysLeft !== 1 ? 's' : '') + '. Upgrade to Essential to keep full access.</div>' +
           '<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Essential &#8212; R49/month</button>' +
         '</div>';
     }
