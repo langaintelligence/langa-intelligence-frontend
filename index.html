@@ -3592,7 +3592,8 @@ function renderDocs() {
         d.reminders.map(function(r){
           var label = r.title || r.reminder_type || 'Reminder';
           var dateStr = r.remind_at ? ' — ' + new Date(r.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'}) : '';
-          return '<span class="doc-reminder-tag" onclick="event.stopPropagation();deleteDocReminder(\''+r.id+'\',\''+d.id+'\')">🔔 '+esc(label)+esc(dateStr)+'</span>';
+          var _rIcon = r.is_auto_created ? '⚡' : '🔔';
+          return '<span class="doc-reminder-tag" onclick="event.stopPropagation();deleteDocReminder(\''+r.id+'\',\''+d.id+'\')" title="'+(r.is_auto_created?'Auto-created reminder':'Manual reminder')+'">'+_rIcon+' '+esc(label)+esc(dateStr)+'</span>';
         }).join('') + '</div>' : '') +
     '</div>';
   }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📄</div><div style="font-size:15px;font-weight:600;color:var(--muted);margin-bottom:6px;">No documents found</div><div style="font-size:13px;color:var(--subtle);">Try adjusting your filters or search query</div></div>';
@@ -3864,6 +3865,17 @@ async function reanalyseDoc() {
     renderSidebar(); renderStats(); renderInsights(); renderDocs();
     openDetail(currentDoc.id);
     toast('Re-analysis complete', currentDoc.name, isHighRisk(currentDoc.risk) ? 'warn' : 'success', 4000);
+    if (result && result.auto_reminders_created > 0) {
+      var _arc = result.auto_reminders_created;
+      var _rdocId = currentDoc.id;
+      api('GET', '/reminders/' + _rdocId).then(function(remResp) {
+        var idx = userDocs.findIndex(function(d){ return d.id === _rdocId; });
+        if (idx !== -1) { userDocs[idx].reminders = (remResp && remResp.reminders) || []; renderDocs(); }
+      }).catch(function(){});
+      setTimeout(function() {
+        toast('Reminders set', '📅 ' + _arc + ' reminder' + (_arc !== 1 ? 's' : '') + ' automatically set based on your document dates.', 'success', 6000);
+      }, 1500);
+    }
   } catch(e) {
     toast('Re-analysis failed', apiErrMsg(e), 'warn', 5000);
     btn.disabled = false;
@@ -4530,6 +4542,18 @@ async function startAnalysisAPI(name) {
     toast('Contract analysed', newDoc.name, isHighRisk(newDoc.risk) ? 'warn' : 'success', 5000);
     addNotification('success', 'Document analysed', newDoc.name + ' analysis is ready. Click to view.', true);
 
+    // Auto-reminder toast + reload reminder tags
+    if (analysisResult && analysisResult.auto_reminders_created > 0) {
+      var _arc = analysisResult.auto_reminders_created;
+      api('GET', '/reminders/' + docId).then(function(remResp) {
+        var idx = userDocs.findIndex(function(d){ return d.id === docId; });
+        if (idx !== -1) { userDocs[idx].reminders = (remResp && remResp.reminders) || []; renderDocs(); }
+      }).catch(function(){});
+      setTimeout(function() {
+        toast('Reminders set', '📅 ' + _arc + ' reminder' + (_arc !== 1 ? 's' : '') + ' automatically set based on your document dates.', 'success', 6000);
+      }, 1500);
+    }
+
   } catch(e) {
     body.innerHTML =
       '<div style="text-align:center;padding:32px 24px;">' +
@@ -4869,7 +4893,8 @@ function renderReminders() {
       items.push({ bucket: classify(days), days: days, remId: r.id, docId: d.id,
         title: r.title || r.reminder_type || 'Reminder',
         desc: d.name,
-        dateStr: fmtDate(r.remind_at) || r.remind_at || 'No date' });
+        dateStr: fmtDate(r.remind_at) || r.remind_at || 'No date',
+        isAutoCreated: !!(r.is_auto_created) });
     });
   });
 
@@ -4917,7 +4942,7 @@ function renderReminders() {
       '<div class="rc-bar" style="background:' + cfg.bar + '"></div>' +
       '<div class="rc-body">' +
         '<div class="rc-top">' +
-          '<div class="rc-title">' + (r.remId ? '🔔 ' : '') + esc(r.title) + '</div>' +
+          '<div class="rc-title">' + (r.remId ? (r.isAutoCreated ? '⚡ ' : '🔔 ') : '') + esc(r.title) + '</div>' +
           '<span class="rc-when-badge" style="background:' + badgeBg + ';color:' + badgeColor + '">' + esc(r.dateStr) + '</span>' +
         '</div>' +
         '<div class="rc-desc">' + esc(r.desc) + '</div>' +
