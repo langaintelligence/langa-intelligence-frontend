@@ -403,10 +403,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .chat-sugg{padding:0 24px 16px;display:flex;flex-direction:column;gap:6px;}
 .chat-sq{background:rgba(255,255,255,0.3);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.4);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:var(--white);cursor:pointer;transition:all 0.15s;text-align:left;}
 .chat-sq:hover{background:rgba(255,255,255,0.4);}
-.chat-input-row{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.1);display:flex;gap:10px;}
-.chat-input{flex:1;background:var(--white);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 16px;font-size:13px;font-family:Sora,sans-serif;outline:none;color:var(--ink);}
+.chat-input-row{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.1);display:flex;gap:10px;align-items:flex-end;}
+.chat-input{flex:1;background:var(--white);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 16px;font-size:13px;font-family:Sora,sans-serif;outline:none;color:var(--ink);resize:none;overflow-y:auto;min-height:44px;max-height:150px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
 .chat-input:focus{border-color:rgba(37,99,235,0.5);}
 .chat-hint{text-align:center;font-size:11px;color:rgba(255,255,255,0.35);padding:6px 0 0;}
+.chat-disclaimer{text-align:center;font-size:12px;color:rgba(255,255,255,0.5);padding:4px 24px 10px;line-height:1.4;}
 .chat-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:40px 0;}
 @keyframes readPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.6;transform:scale(1.15);}}
 .read-aloud-btn{display:block;background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;color:var(--muted);font-size:13px;line-height:1;margin-top:6px;margin-left:auto;opacity:0;transition:opacity 0.2s,color 0.2s;}
@@ -2243,10 +2244,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     </div>
     <div class="chat-sugg" id="chat-suggestions"></div>
     <div class="chat-input-row" id="chat-input-row">
-      <input class="chat-input" id="chat-input" type="text" placeholder="Ask me anything about this document..." onkeydown="if(event.key==='Enter')sendChat()">
+      <textarea class="chat-input" id="chat-input" rows="1" placeholder="Ask me anything about this document..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}" oninput="_resizeChatInput(this)"></textarea>
       <button class="btn btn-primary" id="chat-send" onclick="sendChat()">Send</button>
     </div>
-    <div class="chat-hint" id="chat-hint">Press Enter to send · Powered by Langa Intelligence</div>
+    <div class="chat-hint" id="chat-hint">Press Enter to send · Shift+Enter for new line</div>
+    <div class="chat-disclaimer">Langa AI can make mistakes. Always verify important information with a qualified professional.</div>
   </div>
 </div>
 
@@ -4119,8 +4121,15 @@ function stopReadAloud() {
   }
 }
 
+function _resizeChatInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+}
+
 function sendSuggest(q) {
-  document.getElementById('chat-input').value = q;
+  var inp = document.getElementById('chat-input');
+  inp.value = q;
+  _resizeChatInput(inp);
   document.getElementById('chat-suggestions').innerHTML = '';
   sendChat();
 }
@@ -4133,6 +4142,7 @@ async function sendChat() {
   var msg = inp.value.trim();
   if (!msg || processing) return;
   inp.value = '';
+  inp.style.height = 'auto';
   sendBtn.disabled = true;
   document.getElementById('chat-suggestions').innerHTML = '';
   appendUserMsg(msg);
