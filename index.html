@@ -407,7 +407,8 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .chat-input{flex:1;background:var(--white);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 16px;font-size:13px;font-family:Sora,sans-serif;outline:none;color:var(--ink);resize:none;overflow-y:auto;min-height:44px;max-height:150px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
 .chat-input:focus{border-color:rgba(37,99,235,0.5);}
 .chat-hint{text-align:center;font-size:11px;color:rgba(255,255,255,0.35);padding:6px 0 0;}
-.chat-disclaimer{text-align:center;font-size:12px;color:rgba(255,255,255,0.5);padding:4px 24px 10px;line-height:1.4;}
+.chat-disclaimer{text-align:center;font-size:12px;color:rgba(255,255,255,0.5);padding:4px 24px 2px;line-height:1.4;}
+.chat-powered{text-align:center;font-size:11px;color:rgba(255,255,255,0.3);padding:2px 24px 10px;}
 .chat-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:40px 0;}
 @keyframes readPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.6;transform:scale(1.15);}}
 .read-aloud-btn{display:block;background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:4px;color:var(--muted);font-size:13px;line-height:1;margin-top:6px;margin-left:auto;opacity:0;transition:opacity 0.2s,color 0.2s;}
@@ -2248,7 +2249,8 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       <button class="btn btn-primary" id="chat-send" onclick="sendChat()">Send</button>
     </div>
     <div class="chat-hint" id="chat-hint">Press Enter to send · Shift+Enter for new line</div>
-    <div class="chat-disclaimer">Langa AI can make mistakes. Always verify important information with a qualified professional.</div>
+    <div class="chat-disclaimer">AI can make mistakes. Always verify important information with a qualified professional.</div>
+    <div class="chat-powered">Powered by <span style="color:rgba(255,255,255,0.55);">Langa Intelligence</span></div>
   </div>
 </div>
 
