@@ -2912,6 +2912,7 @@ function apiDocToLocal(apiDoc, analysis) {
     renewalDate: apiDoc.renewal_date || null,
     is_analysed: !!apiDoc.is_analysed,
     isScanned: analysis ? (analysis.is_scanned || false) : false,
+    isArchived: !!(apiDoc.is_archived),
     reminders: [],
     _fromApi: true,
   };
@@ -2923,6 +2924,16 @@ async function loadUserDocuments() {
   try {
     var resp = await api('GET', '/documents');
     var docs = Array.isArray(resp) ? resp : (resp && Array.isArray(resp.documents) ? resp.documents : []);
+    // Extract downgrade-protection context from response
+    if (resp && typeof resp === 'object' && !Array.isArray(resp)) {
+      if (currentUser) {
+        currentUser.overLimit = !!resp.over_limit;
+        currentUser.graceExpired = !!resp.grace_expired;
+        currentUser.graceExpiresAt = resp.grace_expires_at || null;
+        currentUser.graceDaysRemaining = (typeof resp.days_remaining === 'number') ? resp.days_remaining : null;
+        if (resp.plan_doc_limit) currentUser.planDocLimit = resp.plan_doc_limit;
+      }
+    }
     // Load analyses and reminders in parallel
     var [analysisResults, remindersResults] = await Promise.all([
       Promise.all(docs.map(function(d) {
@@ -3465,25 +3476,62 @@ function renderInsights() {
 
 function renderUploadArea() {
   const area = document.getElementById('upload-area');
-  const canUpload = userDocs.length < currentUser.maxDocs;
-  if (canUpload) {
-    area.innerHTML = `
-      <div class="upload-zone" onclick="openUpload()" style="margin-bottom:20px;cursor:pointer;">
-        <div class="uz-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
-        <div class="uz-title">Upload a contract</div>
-        <div class="uz-sub">Click to upload or paste text — Claude AI will analyse it instantly</div>
-        <button class="btn btn-primary" style="pointer-events:none;">Analyse with Langa Intelligence</button>
-      </div>`;
-  } else if (currentUser.plan === 'freemium') {
-    area.innerHTML = `
-      <div class="limit-banner" style="margin-bottom:20px;">
-        <div class="lb-title">Freemium limit reached</div>
-        <div class="lb-sub">You've used both your free document slots. Upgrade to Essential (R49/mo) or higher to unlock more uploads, smart reminders, and AI chat.</div>
-        <button class="btn btn-primary" onclick="showUpgradeModal()">See upgrade options →</button>
-      </div>`;
-  } else {
-    area.innerHTML = `<div style="margin-bottom:20px;"><button class="btn btn-primary" onclick="openUpload()">+ Upload Document</button></div>`;
+  const overLimit = !!(currentUser && currentUser.overLimit);
+
+  // Build downgrade banner (shown when user has more docs than plan allows)
+  var bannerHTML = '';
+  if (overLimit) {
+    if (currentUser.graceExpired) {
+      bannerHTML =
+        '<div class="limit-banner" style="margin-bottom:16px;background:var(--red-l,#FEF2F2);border-color:var(--red,#DC2626);">' +
+          '<div class="lb-title" style="color:var(--red,#DC2626);">&#128194; Some of your documents have been archived</div>' +
+          '<div class="lb-sub">Upgrade to Essential to restore full access instantly.</div>' +
+          '<button class="btn btn-primary" onclick="showUpgradeModal()">Restore My Documents &#8212; R49/month</button>' +
+        '</div>';
+    } else {
+      var _daysLeft = (currentUser.graceDaysRemaining !== null && currentUser.graceDaysRemaining !== undefined) ? currentUser.graceDaysRemaining : 30;
+      var _planLim = currentUser.planDocLimit || currentUser.maxDocs;
+      var _docCnt = userDocs.length;
+      var _planNm = _planLabel(currentUser.plan);
+      bannerHTML =
+        '<div class="limit-banner" style="margin-bottom:16px;background:var(--amber-l,#FFFBEB);border-color:var(--amber,#D97706);">' +
+          '<div class="lb-title" style="color:#92400E;">&#128194; You have ' + _docCnt + ' documents but your ' + _planNm + ' plan includes ' + _planLim + '</div>' +
+          '<div class="lb-sub">Your older documents will be archived in ' + _daysLeft + ' day' + (_daysLeft !== 1 ? 's' : '') + '. Upgrade to Essential to keep full access.</div>' +
+          '<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Essential &#8212; R49/month</button>' +
+        '</div>';
+    }
   }
+
+  // Build upload zone
+  var uploadHTML = '';
+  if (overLimit) {
+    uploadHTML =
+      '<div class="upload-zone" onclick="showUpgradeModal()" title="Upgrade to upload more documents" style="margin-bottom:20px;cursor:pointer;opacity:0.55;">' +
+        '<div class="uz-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>' +
+        '<div class="uz-title">Upload a contract</div>' +
+        '<div class="uz-sub" style="color:var(--red,#DC2626);font-weight:500;">Upgrade to upload more documents</div>' +
+        '<button class="btn btn-primary" style="pointer-events:none;opacity:0.6;">Upgrade to upload</button>' +
+      '</div>';
+  } else if (userDocs.length < currentUser.maxDocs) {
+    uploadHTML =
+      '<div class="upload-zone" onclick="openUpload()" style="margin-bottom:20px;cursor:pointer;">' +
+        '<div class="uz-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>' +
+        '<div class="uz-title">Upload a contract</div>' +
+        '<div class="uz-sub">Click to upload or paste text — Claude AI will analyse it instantly</div>' +
+        '<button class="btn btn-primary" style="pointer-events:none;">Analyse with Langa Intelligence</button>' +
+      '</div>';
+  } else if (currentUser.plan === 'freemium') {
+    uploadHTML =
+      '<div class="limit-banner" style="margin-bottom:20px;">' +
+        '<div class="lb-title">Freemium limit reached</div>' +
+        '<div class="lb-sub">You\'ve used both your free document slots. Upgrade to Essential (R49/mo) or higher to unlock more uploads, smart reminders, and AI chat.</div>' +
+        '<button class="btn btn-primary" onclick="showUpgradeModal()">See upgrade options →</button>' +
+      '</div>';
+  } else {
+    uploadHTML = '<div style="margin-bottom:20px;"><button class="btn btn-primary" onclick="openUpload()">+ Upload Document</button></div>';
+  }
+
+  area.innerHTML = bannerHTML + uploadHTML;
 }
 
 
@@ -3503,6 +3551,26 @@ function renderDocs() {
     var statusLabel = d.status==='active'?'Active':d.status==='expiring-soon'?'Expiring Soon':'Expired';
     var statusClass = d.status==='active'?'badge-active':d.status==='expiring-soon'?'badge-expiring':'badge-expired';
     var iconBg = isHighRisk(d.risk)?'var(--red-l)':isMedRisk(d.risk)?'var(--amber-l)':'var(--blue-l)';
+
+    // Archived doc: locked overlay, delete always available
+    if (d.isArchived) {
+      return '<div class="doc-card" data-docid="'+d.id+'" onclick="showUpgradeModal()" style="position:relative;cursor:pointer;">' +
+        '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document" style="position:relative;z-index:3;">✕</div>' +
+        '<div style="position:absolute;inset:0;background:rgba(15,23,42,0.6);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;gap:8px;pointer-events:none;">' +
+          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+          '<div style="color:#fff;font-size:13px;font-weight:600;text-align:center;padding:0 12px;">Archived — Upgrade to restore access</div>' +
+        '</div>' +
+        '<div style="opacity:0.35;">' +
+          '<div class="dc-top">' +
+            '<div class="dc-icon" style="background:'+iconBg+'">'+(icons[d.type]||'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>')+'</div>' +
+            '<div class="dc-badges"><span class="badge badge-expired">Archived</span></div>' +
+          '</div>' +
+          '<div class="dc-name">'+esc(d.name)+'</div>' +
+          '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
+        '</div>' +
+      '</div>';
+    }
+
     return '<div class="doc-card" data-docid="'+d.id+'" onclick="openDetail(this.dataset.docid)">' +
       '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document">✕</div>' +
       '<div class="dc-top">' +
@@ -3562,6 +3630,7 @@ function riskToBannerClass(r){ return isHighRisk(r)?'rb-attention':isMedRisk(r)?
 function openDetail(id) {
   var doc = userDocs.find(function(d){ return d.id === id; });
   if (!doc) return;
+  if (doc.isArchived) { showUpgradeModal(); return; }
   currentDoc = doc;
 
   // ── Header ──────────────────────────────────────────────────────────────
@@ -3945,9 +4014,6 @@ function showReminderGate() {
           '<div class="rpg-feat"><div class="rpg-dot" style="background:#06B6D4;"></div>Unlimited AI chat per contract</div>' +
           '<div class="rpg-feat"><div class="rpg-dot" style="background:#06B6D4;"></div>Up to 50 documents + full insights dashboard</div>' +
         '</div>' +
-        '<div style="background:var(--green-l);border:1px solid var(--green);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--muted);line-height:1.5;">' +
-          '<strong>Why this matters:</strong> The average South African loses R2,400/year to auto-renewals they forgot to cancel. Langa Essential reminders pay for themselves after one missed deadline avoided.' +
-        '</div>' +
         '<button onclick="closeReminderGate();showUpgradeModal();" style="width:100%;height:46px;background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:Sora,sans-serif;margin-bottom:10px;">Upgrade to Essential — R49/month</button>' +
         '<button onclick="closeReminderGate();" style="width:100%;height:38px;background:none;border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer;font-family:Sora,sans-serif;">Maybe later</button>' +
       '</div>' +
@@ -4256,6 +4322,7 @@ async function startAnalysis() {
   // Pasted text path — use local analyser (plain text can't be sent as PDF to API)
   if (!text) { toast('No content', 'Please upload a PDF or paste contract text.', 'warn'); return; }
   if (!canUploadThisMonth()) { closeUpload(); showMonthlyLimitModal(); return; }
+  if (currentUser && currentUser.overLimit) { closeUpload(); showUpgradeModal(); return; }
   if (userDocs.length >= currentUser.maxDocs) { closeUpload(); showUpgradeModal(); return; }
   if (processing) return;
   processing = true;
@@ -4359,6 +4426,7 @@ async function analyseWithClaude(contractText, name) {
 }
 
 async function startAnalysisAPI(name) {
+  if (currentUser && currentUser.overLimit) { closeUpload(); showUpgradeModal(); return; }
   if (processing) return;
   processing = true;
   var body = document.getElementById('upload-modal-body');
