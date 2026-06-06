@@ -5065,16 +5065,16 @@ function showReminderFromId(docId) {
 function showOnboardingTip() {
   var existing = document.getElementById('onboard-tip');
   if (existing) existing.remove();
-  var isPro = currentUser.plan === 'pro';
+  var isFreemium = currentUser.plan === 'freemium' || !currentUser.plan;
   var tip = document.createElement('div');
   tip.className = 'onboard-tip';
   tip.id = 'onboard-tip';
-  tip.innerHTML = '<div class="ot-icon">' + (isPro ? '🚀' : '👋') + '</div>' +
+  tip.innerHTML = '<div class="ot-icon">' + (isFreemium ? '👋' : '🚀') + '</div>' +
     '<div style="flex:1;">' +
-      '<div class="ot-title">' + (isPro ? 'You have full Pro access' : 'Welcome to Langa Intelligence') + '</div>' +
-      '<div class="ot-text">' + (isPro
-        ? 'Your dashboard has 5 pre-loaded SA contracts. Click any card to view the AI analysis, set reminders, or chat with the AI assistant about any clause.'
-        : 'You have 2 free document slots. Click "Analyse with Langa Intelligence" to upload a contract and see it analysed in real time. Upgrade anytime for full access.') +
+      '<div class="ot-title">' + (isFreemium ? 'Welcome to Langa Intelligence' : 'You have full ' + _planLabel(currentUser.plan) + ' access') + '</div>' +
+      '<div class="ot-text">' + (isFreemium
+        ? 'Upload your first document to see it analysed instantly. Upgrade anytime for full access.'
+        : 'Click any document to view the AI analysis, set reminders, or chat with Langa about any clause.') +
       '</div>' +
     '</div>' +
     '<button class="ot-close" onclick="this.parentElement.remove()" title="Dismiss">✕</button>';
