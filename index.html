@@ -4495,8 +4495,22 @@ async function startAnalysisAPI(name) {
       }
     }
 
-    // Build local doc from API response
-    var apiDocObj = { id: docId, name: name, type: 'contract', provider: null, status: 'active', is_analysed: true, created_at: new Date().toISOString() };
+    // Fetch the full document record — the analysis pipeline saves provider and
+    // dates (expiry, renewal, cancel_deadline) to the documents table before
+    // returning, so GET /documents/{id} immediately has the complete metadata.
+    var fullDoc = await api('GET', '/documents/' + docId).catch(function() { return null; });
+    var apiDocObj = {
+      id: docId,
+      name: name,
+      type: (fullDoc && fullDoc.type) || 'contract',
+      provider: (fullDoc && fullDoc.provider) || null,
+      status: (fullDoc && fullDoc.status) || 'active',
+      is_analysed: true,
+      created_at: (fullDoc && fullDoc.created_at) || new Date().toISOString(),
+      expiry_date: (fullDoc && fullDoc.expiry_date) || null,
+      renewal_date: (fullDoc && fullDoc.renewal_date) || null,
+      cancel_deadline: (fullDoc && fullDoc.cancel_deadline) || null,
+    };
     var newDoc = apiDocToLocal(apiDocObj, {
       risk_level: analysisResult.risk_level,
       risk_label: analysisResult.risk_label,
@@ -4524,7 +4538,7 @@ async function startAnalysisAPI(name) {
           '<div class="sdc-icon" style="background:'+alertBg+'">'+FILE_ICON+'</div>' +
           '<div>' +
             '<div class="sdc-name">'+esc(newDoc.name)+'</div>' +
-            '<div class="sdc-meta">'+esc(newDoc.type.charAt(0).toUpperCase()+newDoc.type.slice(1))+'</div>' +
+            '<div class="sdc-meta">'+esc(newDoc.type.charAt(0).toUpperCase()+newDoc.type.slice(1))+(newDoc.provider?' &middot; '+esc(newDoc.provider):'')+'</div>' +
             '<span class="sdc-risk" style="background:'+alertBg+';color:'+alertFg+'">'+esc(newDoc.riskLabel)+'</span>' +
           '</div>' +
         '</div>' +
