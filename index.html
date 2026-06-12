@@ -422,8 +422,8 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .chat-sugg{padding:0 24px 16px;display:flex;flex-direction:column;gap:6px;}
 .chat-sq{background:rgba(255,255,255,0.3);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.4);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:var(--white);cursor:pointer;transition:all 0.15s;text-align:left;}
 .chat-sq:hover{background:rgba(255,255,255,0.4);}
-.chat-input-row{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.1);display:flex;gap:10px;align-items:flex-end;}
-.chat-input{flex:1;background:var(--white);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 16px;font-size:13px;font-family:Sora,sans-serif;outline:none;color:var(--ink);resize:none;overflow-y:auto;min-height:44px;max-height:150px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;}
+.chat-input-row{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.1);display:flex;gap:10px;align-items:flex-end;max-width:100%;box-sizing:border-box;}
+.chat-input{flex:1;min-width:0;background:var(--white);border:1px solid var(--bdr);border-radius:var(--rs);padding:12px 16px;font-size:13px;font-family:Sora,sans-serif;outline:none;color:var(--ink);resize:none;overflow-y:auto;min-height:44px;max-height:150px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap;box-sizing:border-box;}
 .chat-input:focus{border-color:rgba(37,99,235,0.5);}
 .chat-hint{text-align:center;font-size:11px;color:rgba(255,255,255,0.35);padding:6px 0 0;}
 .chat-disclaimer{text-align:center;font-size:12px;color:rgba(255,255,255,0.5);padding:4px 24px 2px;line-height:1.4;}
@@ -970,6 +970,14 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     padding: 10px 12px !important;
     padding-bottom: max(10px, env(safe-area-inset-bottom, 10px)) !important;
     gap: 8px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .chat-input {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    padding: 12px 16px !important;
   }
   /* "Press Enter to send" makes no sense on mobile */
   .chat-hint { display: none !important; }
@@ -5180,6 +5188,7 @@ async function confirmDelete() {
 
   userDocs = userDocs.filter(function(d){ return d.id !== pendingDeleteId; });
   pendingDeleteId = null;
+  if (delBtn) setLoading(delBtn, false, 'Delete');
   hide('del-overlay');
   closeDetail();
   renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
