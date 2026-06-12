@@ -2664,14 +2664,14 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 <div class="pdf-pw-overlay hidden" id="pdf-pw-overlay">
   <div class="pdf-pw-modal">
     <div class="pdf-pw-icon">🔒</div>
-    <div class="pdf-pw-title">Password-Protected PDF</div>
-    <div class="pdf-pw-desc">This document requires a password to open. Enter it below to proceed with analysis.</div>
+    <div class="pdf-pw-title">This document is password protected</div>
+    <div class="pdf-pw-desc">Enter the document password to unlock it for analysis. Your password is used only in memory and is never stored or logged.</div>
     <div class="form-group" style="margin-bottom:0;">
       <label style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;display:block;">PDF Password</label>
       <input type="password" id="pdf-pw-input" placeholder="Enter PDF password" style="width:100%;">
     </div>
+    <p style="font-size:12px;color:var(--text-muted);margin:6px 0 0;">&#128161; Common passwords: your ID number, date of birth (YYYYMMDD), or account number</p>
     <div id="pdf-pw-error" style="font-size:12px;color:var(--red);margin-top:8px;display:none;"></div>
-    <p class="pdf-pw-notice">Your password is used only for text extraction and is never saved or logged anywhere.</p>
     <div style="display:flex;gap:10px;">
       <button class="btn btn-ghost btn-full" id="pdf-pw-cancel">Cancel</button>
       <button class="btn btn-primary btn-full" id="pdf-pw-submit">Unlock &amp; Analyse</button>
@@ -3836,20 +3836,24 @@ async function reanalyseDoc() {
   try {
     var result = null;
     var _raPw = null;
-    for (var _raAttempt = 0; _raAttempt < 4; _raAttempt++) {
+    var _raPwAttempts = 0;
+    for (;;) {
       try {
         var _raPayload = { document_id: currentDoc.id };
         if (_raPw) _raPayload.password = _raPw;
         result = await api('POST', '/analysis?force=true', _raPayload);
-        _raPw = null;
         break;
       } catch(_raE) {
         _raPw = null;
         var _raMsg = apiErrMsg(_raE);
-        if (_raMsg.toLowerCase().includes('password')) {
-          var _raPwVal = await _promptPdfPassword(_raAttempt > 0 ? _raMsg : null);
+        if (_raMsg === 'password_protected' || _raMsg === 'wrong_password') {
+          if (_raPwAttempts >= 3) {
+            throw new Error('Unable to unlock this document. Please remove the password protection manually and try again.');
+          }
+          var _raPwVal = await _promptPdfPassword(_raMsg === 'wrong_password' ? 'Incorrect password. Please try again.' : null);
           if (_raPwVal === null) { btn.disabled = false; btn.innerHTML = origHTML; return; }
           _raPw = _raPwVal;
+          _raPwAttempts++;
         } else {
           throw _raE;
         }
@@ -4475,20 +4479,24 @@ async function startAnalysisAPI(name) {
     // Step 2: Analyse the uploaded document (retry loop for password-protected PDFs)
     var analysisResult = null;
     var pdfPassword = null;
-    for (var _attempt = 0; _attempt < 4; _attempt++) {
+    var _pwAttempts = 0;
+    for (;;) {
       try {
         var analysisPayload = { document_id: docId };
         if (pdfPassword) analysisPayload.password = pdfPassword;
         analysisResult = await api('POST', '/analysis', analysisPayload);
-        pdfPassword = null;
         break;
       } catch(_e) {
         pdfPassword = null;
         var _msg = apiErrMsg(_e);
-        if (_msg.toLowerCase().includes('password')) {
-          var _pw = await _promptPdfPassword(_attempt > 0 ? _msg : null);
+        if (_msg === 'password_protected' || _msg === 'wrong_password') {
+          if (_pwAttempts >= 3) {
+            throw new Error('Unable to unlock this document. Please remove the password protection manually and try again.');
+          }
+          var _pw = await _promptPdfPassword(_msg === 'wrong_password' ? 'Incorrect password. Please try again.' : null);
           if (_pw === null) { processing = false; return; }
           pdfPassword = _pw;
+          _pwAttempts++;
         } else {
           throw _e;
         }
