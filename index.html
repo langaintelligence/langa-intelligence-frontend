@@ -113,6 +113,25 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 [data-theme="dark"] .lp-auth-card{background:var(--white)!important;}
 [data-theme="dark"] .lp-auth-card h2{color:var(--navy)!important;}
 [data-theme="dark"] .lp-brand-logo{background:var(--white)!important;color:var(--blue)!important;}
+.mv-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:768px){.mv-grid{grid-template-columns:1fr;}}
+.mv-card{background:#FFFFFF;border:0.5px solid #E2E8F0;border-radius:12px;padding:2rem;border-left:4px solid transparent;}
+.mv-card-mission{border-left-color:#00BFFF;}
+.mv-card-vision{border-left-color:#0F172A;}
+.mv-icon-badge{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+.mv-icon-mission{background:rgba(0,191,255,0.12);}
+.mv-icon-vision{background:rgba(15,23,42,0.08);}
+.mv-icon-vision svg{stroke:#0F172A;}
+.mv-heading{font-family:'DM Serif Display',serif;font-size:24px;color:#0F172A;margin-bottom:12px;}
+.mv-body{font-size:15px;color:#475569;line-height:1.75;margin:0;}
+[data-theme="dark"] .mv-card{background:#1E293B;border-color:#334155;}
+[data-theme="dark"] .mv-card-mission{border-left-color:#00BFFF;}
+[data-theme="dark"] .mv-card-vision{border-left-color:#CBD5E1;}
+[data-theme="dark"] .mv-icon-mission{background:rgba(0,191,255,0.15);}
+[data-theme="dark"] .mv-icon-vision{background:rgba(255,255,255,0.08);}
+[data-theme="dark"] .mv-icon-vision svg{stroke:#CBD5E1;}
+[data-theme="dark"] .mv-heading{color:#F1F5F9;}
+[data-theme="dark"] .mv-body{color:#94A3B8;}
 [data-theme="dark"] .lp-brand-name{color:var(--body)!important;}
 [data-theme="dark"] .lp-success-box{background:rgba(22,163,74,0.15)!important;border-color:#16A34A!important;color:#86EFAC!important;}
 [data-theme="dark"] #solutions{background:#1E293B!important;}
@@ -1803,16 +1822,20 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 
   <!-- MISSION & VISION -->
   <section id="about" style="background:var(--bg);padding:80px 24px;">
-    <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-      <div class="lp-info-card" style="padding:36px;background:linear-gradient(135deg,#ECFEFF,#EFF6FF);border-radius:20px;border:1px solid #A5F3FC;">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:32px;color:var(--navy);margin-bottom:14px;">Our Mission</h2>
-        <p style="font-size:15px;color:var(--body);line-height:1.75;">To help individuals and businesses protect what matters by using artificial intelligence to track, analyse, and simplify the management of contracts, warranties, and terms — bringing clarity and control to the fine print.</p>
+    <div class="mv-grid">
+      <div class="mv-card mv-card-mission">
+        <div class="mv-icon-badge mv-icon-mission">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00BFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <h2 class="mv-heading">Our mission</h2>
+        <p class="mv-body">To help individuals and businesses protect what matters by using artificial intelligence to track, analyse, and simplify the management of contracts, warranties and terms. Bringing clarity and control to the fine print.</p>
       </div>
-      <div class="lp-info-card" style="padding:36px;background:linear-gradient(135deg,#EFF6FF,#EEF2FF);border-radius:20px;border:1px solid #BFDBFE;">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M5 3l.5 1.5L7 5l-1.5.5L5 7l-.5-1.5L3 5l1.5-.5z"/><path d="M19 15l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5L17 17l1.5-.5z"/></svg>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:32px;color:var(--navy);margin-bottom:14px;">Our Vision</h2>
-        <p style="font-size:15px;color:var(--body);line-height:1.75;">To become Africa's most trusted AI-driven personal and business protection platform — where users can store, understand, and act on their important agreements with ease and confidence.</p>
+      <div class="mv-card mv-card-vision">
+        <div class="mv-icon-badge mv-icon-vision">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h2 class="mv-heading">Our vision</h2>
+        <p class="mv-body">To become Africa's most trusted AI-driven personal and business protection platform where users can store, understand, and act on their important agreements with ease and confidence.</p>
       </div>
     </div>
   </section>
