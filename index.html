@@ -3221,6 +3221,7 @@ let currentDoc = null;
 let chatHistory = [];
 let chatDocContext = null;
 let processing = false;
+var reminderSetInSession = false;
 
 // ═══════════════════════════════════
 // NAVIGATION
@@ -4100,6 +4101,7 @@ async function openChat(doc) {
   chatDocContext = doc;
   chatHistory = [];
   freeMessagesUsed = 0;
+  reminderSetInSession = false;
 
   document.getElementById('chat-doc-name').textContent = doc.name;
 
@@ -4128,8 +4130,8 @@ async function openChat(doc) {
 
   msgs.innerHTML = '';
   chatHistory.forEach(function(m) {
-    if (m.role === 'user') appendUserMsg(m.content);
-    else appendAIMsg(m.content);
+    if (m.role === 'user') appendUserMsg(m.content, m.created_at || m.ts);
+    else appendAIMsg(m.content, m.created_at || m.ts);
   });
 
   var introKey = 'chatIntroShown_' + doc.id;
@@ -4353,12 +4355,16 @@ async function sendChat() {
   inp.style.height = 'auto';
   sendBtn.disabled = true;
   document.getElementById('chat-suggestions').innerHTML = '';
-  appendUserMsg(msg);
+  var _msgSentAt = new Date().toISOString();
+  appendUserMsg(msg, _msgSentAt);
   var tid = appendTyping();
   processing = true;
 
   try {
     var reply, msgId;
+
+    var _REMINDER_KW = ['remind me', 'set a reminder', 'reminder for', 'remind me to', 'set reminder'];
+    var _hasReminderIntent = _REMINDER_KW.some(function(kw){ return msg.toLowerCase().indexOf(kw) !== -1; });
 
     if (authToken && chatDocContext._fromApi) {
       // Live API path — pass cached history so backend skips a DB round-trip
@@ -4369,8 +4375,9 @@ async function sendChat() {
       });
       reply = result.answer;
       msgId = result.message_id;
-      // Handle reminder action
-      if (result.reminder_set && result.reminder) {
+      // Handle reminder action — only when user explicitly asked and not already set this session
+      if (result.reminder_set && result.reminder && _hasReminderIntent && !reminderSetInSession) {
+        reminderSetInSession = true;
         var rem = result.reminder;
         var remDate = rem.remind_at ? new Date(rem.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'}) : '';
         // Push into local state FIRST, then render
@@ -4393,11 +4400,12 @@ async function sendChat() {
       reply = localChatReply(msg, chatDocContext);
     }
 
+    var _replyAt = new Date().toISOString();
     removeTyping(tid);
-    appendAIMsg(reply);
+    appendAIMsg(reply, _replyAt);
     scrollChatToBottom(true);
-    chatHistory.push({ role: 'user', content: msg });
-    chatHistory.push({ role: 'assistant', content: reply });
+    chatHistory.push({ role: 'user', content: msg, ts: _msgSentAt });
+    chatHistory.push({ role: 'assistant', content: reply, ts: _replyAt });
 
   } catch(e) {
     removeTyping(tid);
@@ -4416,9 +4424,13 @@ async function sendChat() {
   }
 }
 
-function appendUserMsg(text) {
+function _fmtChatTs(ts) {
+  return (ts ? new Date(ts) : new Date()).toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+}
+
+function appendUserMsg(text, ts) {
   const msgs = document.getElementById('chat-messages');
-  const t = new Date().toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+  const t = _fmtChatTs(ts);
   const d = document.createElement('div');
   d.className = 'chat-msg chat-msg-user';
   d.innerHTML = `<div class="chat-mini-avatar" style="background:rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:700;">${currentUser.avatar}</div><div><div class="chat-bubble">${esc(text)}</div><div class="chat-msg-time">${t}</div></div>`;
@@ -4458,9 +4470,9 @@ function renderMd(raw) {
   return html.replace(/<br>$/, '');
 }
 
-function appendAIMsg(text) {
+function appendAIMsg(text, ts) {
   const msgs = document.getElementById('chat-messages');
-  const t = new Date().toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
+  const t = _fmtChatTs(ts);
   const d = document.createElement('div');
   d.className = 'chat-msg chat-msg-ai';
   const ttsBtn = _ttsSupported
