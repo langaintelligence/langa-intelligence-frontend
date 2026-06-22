@@ -251,13 +251,14 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .s-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:999px;}
 .sidebar-doc{padding:8px 10px;border-radius:var(--rs);cursor:pointer;margin-bottom:2px;}
 .sidebar-doc:hover{background:var(--bg);}
-.sd-name{font-size:12px;font-weight:500;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sd-name-row{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.sd-name{flex:1;min-width:0;font-size:12px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sd-meta{font-size:11px;color:var(--muted);}
-.sidebar-doc{position:relative;padding-right:24px;}
-.sd-rename-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);opacity:0;background:none;border:none;cursor:pointer;padding:3px;border-radius:3px;color:var(--blue);line-height:0;transition:opacity 0.15s;}
+.sd-rename-btn{flex-shrink:0;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;opacity:0;background:none;border:none;cursor:pointer;border-radius:6px;color:var(--blue);transition:opacity 0.15s,background 0.15s;position:relative;}
 .sidebar-doc:hover .sd-rename-btn{opacity:1;}
 .sd-rename-btn:hover{background:var(--blue-l);}
-.sd-tooltip{position:absolute;right:calc(100% + 5px);top:50%;transform:translateY(-50%);background:#1E293B;color:#fff;font-size:10px;font-weight:500;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;}
+.sd-tooltip{position:absolute;bottom:calc(100% + 6px);right:0;background:#0F172A;color:#fff;font-size:11px;font-weight:500;padding:6px 10px;border-radius:var(--rs);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:50;}
+[data-theme="dark"] .sd-tooltip{background:#334155;color:#E2E8F0;}
 .sd-rename-btn:hover .sd-tooltip{opacity:1;}
 .sd-rename-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid var(--blue);outline:none;font-size:12px;font-weight:500;color:var(--ink);font-family:inherit;padding:0;box-sizing:border-box;}
 .plan-box{margin-top:auto;padding-top:14px;border-top:1px solid var(--bdr);}
@@ -3605,12 +3606,14 @@ function renderSidebar() {
   const sb = document.getElementById('sidebar-docs');
   sb.innerHTML = userDocs.map(function(d) {
     return '<div class="sidebar-doc" data-docid="'+d.id+'" onclick="openDetail(this.dataset.docid)">' +
-      '<div class="sd-name">'+esc(d.name)+'</div>' +
+      '<div class="sd-name-row">' +
+        '<div class="sd-name">'+esc(d.name)+'</div>' +
+        '<button class="sd-rename-btn" onclick="event.stopPropagation();_startSidebarRename(\''+d.id+'\')" aria-label="Rename">' +
+          '<svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' +
+          '<span class="sd-tooltip">Rename</span>' +
+        '</button>' +
+      '</div>' +
       '<div class="sd-meta">'+esc(d.provider||d.type)+' · '+esc(d.riskLabel||d.risk)+'</div>' +
-      '<button class="sd-rename-btn" onclick="event.stopPropagation();_startSidebarRename(\''+d.id+'\')" aria-label="Rename">' +
-        '<svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' +
-        '<span class="sd-tooltip">Rename</span>' +
-      '</button>' +
     '</div>';
   }).join('');
 }
