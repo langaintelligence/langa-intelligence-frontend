@@ -253,6 +253,13 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 .sidebar-doc:hover{background:var(--bg);}
 .sd-name{font-size:12px;font-weight:500;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .sd-meta{font-size:11px;color:var(--muted);}
+.sidebar-doc{position:relative;padding-right:24px;}
+.sd-rename-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);opacity:0;background:none;border:none;cursor:pointer;padding:3px;border-radius:3px;color:var(--blue);line-height:0;transition:opacity 0.15s;}
+.sidebar-doc:hover .sd-rename-btn{opacity:1;}
+.sd-rename-btn:hover{background:var(--blue-l);}
+.sd-tooltip{position:absolute;right:calc(100% + 5px);top:50%;transform:translateY(-50%);background:#1E293B;color:#fff;font-size:10px;font-weight:500;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s;}
+.sd-rename-btn:hover .sd-tooltip{opacity:1;}
+.sd-rename-input{width:100%;background:transparent;border:none;border-bottom:1.5px solid var(--blue);outline:none;font-size:12px;font-weight:500;color:var(--ink);font-family:inherit;padding:0;box-sizing:border-box;}
 .plan-box{margin-top:auto;padding-top:14px;border-top:1px solid var(--bdr);}
 .plan-inner{border-radius:var(--rs);padding:12px;}
 .plan-inner.free{background:var(--blue-l);border:1px solid var(--blue-m);}
@@ -3600,8 +3607,82 @@ function renderSidebar() {
     return '<div class="sidebar-doc" data-docid="'+d.id+'" onclick="openDetail(this.dataset.docid)">' +
       '<div class="sd-name">'+esc(d.name)+'</div>' +
       '<div class="sd-meta">'+esc(d.provider||d.type)+' · '+esc(d.riskLabel||d.risk)+'</div>' +
+      '<button class="sd-rename-btn" onclick="event.stopPropagation();_startSidebarRename(\''+d.id+'\')" aria-label="Rename">' +
+        '<svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>' +
+        '<span class="sd-tooltip">Rename</span>' +
+      '</button>' +
     '</div>';
   }).join('');
+}
+
+function _startSidebarRename(docId) {
+  var row = document.querySelector('.sidebar-doc[data-docid="'+docId+'"]');
+  if (!row) return;
+  var nameEl = row.querySelector('.sd-name');
+  if (!nameEl || nameEl.querySelector('input')) return; // already editing
+  var origName = nameEl.textContent;
+  var saved = false;
+
+  nameEl.style.overflow = 'visible';
+  nameEl.style.whiteSpace = 'normal';
+
+  var inp = document.createElement('input');
+  inp.className = 'sd-rename-input';
+  inp.type = 'text';
+  inp.value = origName;
+  nameEl.textContent = '';
+  nameEl.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  function _doSave() {
+    if (saved) return;
+    saved = true;
+    nameEl.style.overflow = '';
+    nameEl.style.whiteSpace = '';
+    var newName = inp.value.trim();
+    if (!newName || newName === origName) {
+      nameEl.textContent = origName;
+      return;
+    }
+    nameEl.textContent = newName;
+    _saveSidebarRename(docId, newName, origName);
+  }
+
+  function _doCancel() {
+    if (saved) return;
+    saved = true;
+    nameEl.style.overflow = '';
+    nameEl.style.whiteSpace = '';
+    nameEl.textContent = origName;
+  }
+
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); _doSave(); }
+    if (e.key === 'Escape') { e.preventDefault(); _doCancel(); }
+  });
+  inp.addEventListener('blur', _doSave);
+  inp.addEventListener('click', function(e) { e.stopPropagation(); });
+}
+
+async function _saveSidebarRename(docId, newName, origName) {
+  var doc = userDocs.find(function(d) { return d.id === docId; });
+  if (!doc) return;
+  try {
+    await api('PATCH', '/documents/'+docId+'/rename', { name: newName });
+    doc.name = newName;
+    if (currentDoc && currentDoc.id === docId) {
+      var dmTitle = document.getElementById('dm-title');
+      if (dmTitle) dmTitle.textContent = newName;
+    }
+    renderSidebar();
+    renderInsights();
+    renderDocs();
+  } catch(e) {
+    doc.name = origName;
+    renderSidebar();
+    toast('Rename failed', 'Could not save the new name. Please try again.', 'error');
+  }
 }
 
 // Badge is suppressed after user visits the Reminders tab (persists within the session).
