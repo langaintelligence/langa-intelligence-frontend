@@ -690,6 +690,10 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 @keyframes sk-shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
 .doc-skeleton{background:var(--white);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;}
 .sk-line{border-radius:4px;background:linear-gradient(90deg,var(--bdr) 25%,var(--bg) 50%,var(--bdr) 75%);background-size:400px 100%;animation:sk-shimmer 1.4s infinite linear;}
+.sd-skeleton{padding:8px 10px;margin-bottom:2px;}
+.stat-sk{display:inline-block;border-radius:4px;background:linear-gradient(90deg,var(--bdr) 25%,var(--bg) 50%,var(--bdr) 75%);background-size:400px 100%;animation:sk-shimmer 1.4s infinite linear;}
+.connecting-bar{position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--navy);color:var(--blue);font-size:12px;font-weight:600;text-align:center;padding:6px;letter-spacing:0.3px;display:none;}
+[data-theme="dark"] .connecting-bar{background:#1e293b;}
 
 /* DOC LIST FOOTER */
 .doc-list-footer{grid-column:1/-1;text-align:center;padding:24px 0 8px;font-size:13px;color:var(--muted);}
@@ -1500,6 +1504,8 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 </style>
 </head>
 <body>
+
+<div id="connecting-bar" class="connecting-bar">⟳ Connecting to Langa Intelligence…</div>
 
 <!-- ═══════════ LANDING PAGE ═══════════ -->
 <!-- Session restore cover — shown synchronously if stored session exists, prevents landing flash -->
@@ -2974,9 +2980,10 @@ async function _tryRefresh() {
 function apiDocToLocal(apiDoc, analysis) {
   var today = new Date();
   var uploadDate = apiDoc.created_at ? apiDoc.created_at.split('T')[0] : today.toISOString().split('T')[0];
-  var risk = analysis ? analysis.risk_level : null;
-  var riskLabel = analysis ? analysis.risk_label : (apiDoc.is_analysed ? 'Analysed' : 'Not analysed');
-  // Calculate status client-side so 'expiring-soon' is set correctly
+  // Use explicit analysis object when provided (e.g. after uploading), otherwise
+  // fall back to analysis fields embedded by the list endpoint (eliminates per-doc fetches).
+  var risk = analysis ? analysis.risk_level : (apiDoc.risk_level || null);
+  var riskLabel = analysis ? analysis.risk_label : (apiDoc.risk_label || (apiDoc.is_analysed ? 'Analysed' : 'Not analysed'));
   var expiryDate = apiDoc.expiry_date || null;
   var status = apiDoc.status || 'active';
   if (expiryDate && (status === 'active' || status == null)) {
@@ -2993,12 +3000,12 @@ function apiDocToLocal(apiDoc, analysis) {
     expiryDate: expiryDate,
     status: status,
     coverageAmount: null,
-    keyTerms: analysis ? (analysis.key_terms || []) : [],
-    aiInsights: analysis ? (analysis.ai_insights || []) : [],
+    keyTerms: analysis ? (analysis.key_terms || []) : (apiDoc.key_terms || []),
+    aiInsights: analysis ? (analysis.ai_insights || []) : (apiDoc.ai_insights || []),
     risk: risk,
     riskLabel: riskLabel,
-    clauses: analysis ? (analysis.clauses || []) : [],
-    summary: analysis ? analysis.summary : 'This document has not been analysed yet. Click "Analyse" to get AI insights.',
+    clauses: analysis ? (analysis.clauses || []) : (apiDoc.clauses || []),
+    summary: analysis ? analysis.summary : (apiDoc.summary || (apiDoc.is_analysed ? 'Analysis available — open document to view details.' : 'This document has not been analysed yet. Click "Analyse" to get AI insights.')),
     cancelDeadline: apiDoc.cancel_deadline || null,
     renewalDate: apiDoc.renewal_date || null,
     is_analysed: !!apiDoc.is_analysed,
@@ -3013,28 +3020,62 @@ function apiDocToLocal(apiDoc, analysis) {
 // ── Load user documents with pagination ──────────────────────────────────────
 async function loadUserDocuments() {
   if (!authToken) return;
-  // Reset and load page 1
+  // Serve from short-lived cache on rapid re-calls (e.g. page refresh within same session)
+  if (_docsCache && (Date.now() - _docsCache.ts) < _DOCS_CACHE_TTL) {
+    userDocs = _docsCache.docs.map(function(d) { return Object.assign({}, d); });
+    _remindersByDoc = _docsCache.remindersByDoc || {};
+    if (currentUser && _docsCache.ctx) Object.assign(currentUser, _docsCache.ctx);
+    docsLoaded = true;
+    renderCatFilter(); renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
+    _initDocsObserver();
+    return;
+  }
+  // Reset state
   userDocs = [];
+  _remindersByDoc = {};
   docsPage = 1;
   docsHasMore = false;
   docsLoaded = false;
   activeCatFilter = 'all';
   renderCatFilter();
+  // Show skeleton states immediately so the UI isn't blank while fetching
   renderSkeletons(6);
+  _renderSidebarSkeleton();
+  _renderStatsSkeleton();
   await _loadDocsPage(1);
   docsLoaded = true;
   _initDocsObserver();
+  // Persist to cache for rapid re-calls
+  _docsCache = {
+    ts: Date.now(),
+    docs: userDocs.map(function(d) { return Object.assign({}, d); }),
+    remindersByDoc: Object.assign({}, _remindersByDoc),
+    ctx: currentUser ? {
+      overLimit: currentUser.overLimit,
+      graceExpired: currentUser.graceExpired,
+      graceExpiresAt: currentUser.graceExpiresAt,
+      graceDaysRemaining: currentUser.graceDaysRemaining,
+      planDocLimit: currentUser.planDocLimit,
+    } : null,
+  };
 }
 
 async function _loadDocsPage(page) {
   if (docsLoading) return;
   docsLoading = true;
   try {
-    var url = '/documents?page=' + page + '&limit=10';
-    console.log('[Langa] Loading docs:', url);
-    var resp = await api('GET', url);
+    // Page 1: fetch document list (analysis data embedded) + all reminders in parallel.
+    // Page 2+: fetch next doc page only — reminders already loaded in _remindersByDoc.
+    var remindersPromise = (page === 1)
+      ? api('GET', '/reminders').catch(function() { return { reminders: [] }; })
+      : Promise.resolve(null);
+
+    var [resp, remindersResp] = await Promise.all([
+      api('GET', '/documents?page=' + page + '&limit=10'),
+      remindersPromise,
+    ]);
+
     var docs = (resp && Array.isArray(resp.documents)) ? resp.documents : (Array.isArray(resp) ? resp : []);
-    // Extract downgrade-protection context
     if (resp && typeof resp === 'object' && !Array.isArray(resp) && currentUser) {
       currentUser.overLimit = !!resp.over_limit;
       currentUser.graceExpired = !!resp.grace_expired;
@@ -3044,23 +3085,22 @@ async function _loadDocsPage(page) {
     }
     docsHasMore = !!(resp && resp.has_more);
     docsPage = page;
-    console.log('[Langa] Docs page', page, '— got', docs.length, 'docs, has_more:', docsHasMore, 'total:', resp && resp.total_count);
-    // Load analyses and reminders in parallel
-    var [analysisResults, remindersResults] = await Promise.all([
-      Promise.all(docs.map(function(d) {
-        if (d.is_analysed) return api('GET', '/analysis/' + d.id).catch(function() { return null; });
-        return Promise.resolve(null);
-      })),
-      Promise.all(docs.map(function(d) {
-        return api('GET', '/reminders/' + d.id).catch(function() { return { reminders: [] }; });
-      })),
-    ]);
-    var newDocs = docs.map(function(d, i) {
-      var local = apiDocToLocal(d, analysisResults[i]);
-      local.reminders = (remindersResults[i] && remindersResults[i].reminders) || [];
+
+    // Build/update reminder lookup from the bulk fetch (page 1 only)
+    if (page === 1 && remindersResp) {
+      _remindersByDoc = {};
+      ((remindersResp.reminders) || []).forEach(function(r) {
+        if (!_remindersByDoc[r.document_id]) _remindersByDoc[r.document_id] = [];
+        _remindersByDoc[r.document_id].push(r);
+      });
+    }
+
+    // Analysis fields are embedded in each doc by the list endpoint — no per-doc fetch needed
+    var newDocs = docs.map(function(d) {
+      var local = apiDocToLocal(d, null);
+      local.reminders = _remindersByDoc[d.id] || [];
       return local;
     });
-    // Merge: avoid duplicates by id
     var existingIds = new Set(userDocs.map(function(d){ return d.id; }));
     newDocs.forEach(function(d){ if (!existingIds.has(d.id)) userDocs.push(d); });
     renderCatFilter();
@@ -3223,6 +3263,10 @@ var docsHasMore = false;
 var docsLoading = false;
 var docsLoaded = false;
 var _docsObserver = null;
+var _remindersByDoc = {};
+var _docsCache = null;
+var _DOCS_CACHE_TTL = 60000;
+function _invalidateDocsCache() { _docsCache = null; }
 
 function planMaxDocs(plan) { return plan === 'max' ? 999 : plan === 'plus' ? 100 : plan === 'pro' ? 50 : 2; }
 function _planLabel(plan) { return plan === 'pro' ? 'Essential' : plan === 'plus' ? 'Professional' : plan === 'max' ? 'Max' : 'Freemium'; }
@@ -3618,6 +3662,26 @@ function renderSidebar() {
   }).join('');
 }
 
+function _renderSidebarSkeleton() {
+  var sb = document.getElementById('sidebar-docs');
+  if (!sb) return;
+  var sk = '';
+  for (var i = 0; i < 4; i++) {
+    sk += '<div class="sd-skeleton">' +
+      '<div class="sk-line" style="height:12px;width:' + (55 + i * 8 % 30) + '%;margin-bottom:6px;"></div>' +
+      '<div class="sk-line" style="height:10px;width:' + (30 + i * 7 % 25) + '%;"></div>' +
+    '</div>';
+  }
+  sb.innerHTML = sk;
+}
+
+function _renderStatsSkeleton() {
+  ['s-total','s-active','s-expiring','s-expired'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = '<span class="stat-sk" style="width:36px;height:28px;"></span>';
+  });
+}
+
 function _startSidebarRename(docId) {
   var row = document.querySelector('.sidebar-doc[data-docid="'+docId+'"]');
   if (!row) return;
@@ -3674,6 +3738,7 @@ async function _saveSidebarRename(docId, newName, origName) {
   try {
     await api('PATCH', '/documents/'+docId+'/rename', { name: newName });
     doc.name = newName;
+    _invalidateDocsCache();
     if (currentDoc && currentDoc.id === docId) {
       var dmTitle = document.getElementById('dm-title');
       if (dmTitle) dmTitle.textContent = newName;
@@ -4150,8 +4215,11 @@ async function reanalyseDoc() {
       var _arc = result.auto_reminders_created;
       var _rdocId = currentDoc.id;
       api('GET', '/reminders/' + _rdocId).then(function(remResp) {
+        var rems = (remResp && remResp.reminders) || [];
         var idx = userDocs.findIndex(function(d){ return d.id === _rdocId; });
-        if (idx !== -1) { userDocs[idx].reminders = (remResp && remResp.reminders) || []; renderDocs(); }
+        if (idx !== -1) { userDocs[idx].reminders = rems; renderDocs(); }
+        _remindersByDoc[_rdocId] = rems;
+        _invalidateDocsCache();
       }).catch(function(){});
       setTimeout(function() {
         toast('Reminders set', '📅 ' + _arc + ' reminder' + (_arc !== 1 ? 's' : '') + ' automatically set based on your document dates.', 'success', 6000);
@@ -4819,6 +4887,7 @@ async function startAnalysisAPI(name) {
     userDocs.push(newDoc);
     lastAnalysedId = newDoc.id;
     pendingUploadFile = null;
+    _invalidateDocsCache();
     renderCatFilter(); renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
 
     var _dk2 = isDark();
@@ -4856,8 +4925,11 @@ async function startAnalysisAPI(name) {
     if (analysisResult && analysisResult.auto_reminders_created > 0) {
       var _arc = analysisResult.auto_reminders_created;
       api('GET', '/reminders/' + docId).then(function(remResp) {
+        var rems = (remResp && remResp.reminders) || [];
         var idx = userDocs.findIndex(function(d){ return d.id === docId; });
-        if (idx !== -1) { userDocs[idx].reminders = (remResp && remResp.reminders) || []; renderDocs(); }
+        if (idx !== -1) { userDocs[idx].reminders = rems; renderDocs(); }
+        _remindersByDoc[docId] = rems;
+        _invalidateDocsCache();
       }).catch(function(){});
       setTimeout(function() {
         toast('Reminders set', '📅 ' + _arc + ' reminder' + (_arc !== 1 ? 's' : '') + ' automatically set based on your document dates.', 'success', 6000);
@@ -5129,11 +5201,14 @@ async function reloadReminders() {
   var btn = document.querySelector('#view-reminders .btn-ghost');
   if (btn) { btn.disabled = true; btn.textContent = '↻ Loading…'; }
   try {
-    await Promise.all(userDocs.map(function(d) {
-      return api('GET', '/reminders/' + d.id)
-        .then(function(r){ d.reminders = r.reminders || []; })
-        .catch(function(){ });
-    }));
+    var resp = await api('GET', '/reminders').catch(function() { return { reminders: [] }; });
+    _remindersByDoc = {};
+    ((resp && resp.reminders) || []).forEach(function(r) {
+      if (!_remindersByDoc[r.document_id]) _remindersByDoc[r.document_id] = [];
+      _remindersByDoc[r.document_id].push(r);
+    });
+    userDocs.forEach(function(d) { d.reminders = _remindersByDoc[d.id] || []; });
+    _invalidateDocsCache();
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '↻ Refresh'; }
   }
@@ -5440,6 +5515,7 @@ async function confirmDelete() {
   if (delBtn) setLoading(delBtn, false, 'Delete');
   hide('del-overlay');
   closeDetail();
+  _invalidateDocsCache();
   renderCatFilter(); renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
   if (doc) toast('Document deleted', doc.name + ' has been removed.', 'info');
 }
@@ -5988,6 +6064,7 @@ async function saveReminder() {
   setLoading(btn, true, 'Saving...');
   try {
     await api('POST', '/reminders', { document_id: _remDocId, reminder_type: _remSelectedType, days_before: _remSelectedDays, channels: channels });
+    _invalidateDocsCache();
     closeReminder();
     var typeLabel = (_REM_LABELS[_remSelectedType] || _remSelectedType).toLowerCase();
     toast('Reminder set', 'We\'ll notify you ' + _remSelectedDays + ' day' + (_remSelectedDays!==1?'s':'') + ' before your ' + typeLabel + '.', 'success');
@@ -6365,8 +6442,10 @@ async function deleteDocReminder(reminderId, docId) {
     var doc = userDocs.find(function(d){ return d.id === docId; });
     if (doc) {
       doc.reminders = (doc.reminders || []).filter(function(r){ return r.id !== reminderId; });
+      if (_remindersByDoc[docId]) _remindersByDoc[docId] = _remindersByDoc[docId].filter(function(r){ return r.id !== reminderId; });
       renderDocs();
     }
+    _invalidateDocsCache();
     updateReminderBadge();
     toast('Reminder deleted', '', 'success', 2000);
   } catch(e) {
@@ -6812,6 +6891,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Capture deep-link hash before session restoration overwrites it
   var _bootHash = window.location.hash.replace('#', '');
+
+  // Health ping — fire immediately; if backend is cold-starting show a connecting banner
+  // so the user sees feedback instead of a silent hang.
+  (function() {
+    var _connBar = document.getElementById('connecting-bar');
+    var _connTimer = setTimeout(function() {
+      if (_connBar) _connBar.style.display = 'block';
+    }, 2500);
+    fetch(API_BASE + '/health').then(function() {
+      clearTimeout(_connTimer);
+      if (_connBar) _connBar.style.display = 'none';
+    }).catch(function() {
+      clearTimeout(_connTimer);
+      if (_connBar) _connBar.style.display = 'none';
+    });
+  })();
 
   // Restore session — sessionStorage for browser tabs, localStorage for standalone PWA
   var storedRefresh = _loadRT();
