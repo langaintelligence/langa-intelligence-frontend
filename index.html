@@ -3637,7 +3637,7 @@ function initApp() {
 
 function renderSidebar() {
   const cnt = userDocs.length;
-  const max = currentUser.maxDocs;
+  const max = currentUser.planDocLimit || currentUser.maxDocs;
   const pct = Math.round(cnt/max*100);
   document.getElementById('plan-bar').style.width = pct + '%';
   document.getElementById('plan-box-sub').textContent = cnt + ' of ' + max + ' documents used';
@@ -6932,13 +6932,22 @@ document.addEventListener('DOMContentLoaded', async function() {
       Promise.all([
         api('GET', '/auth/me').then(function(profile) {
           var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
-          currentUser = {
+          // Preserve live doc-limit fields if _docsPromise already set them on the previous
+          // currentUser object — this reassignment would otherwise silently wipe them out.
+          var _prevLimitFields = currentUser ? {
+            planDocLimit: currentUser.planDocLimit,
+            overLimit: currentUser.overLimit,
+            graceExpired: currentUser.graceExpired,
+            graceExpiresAt: currentUser.graceExpiresAt,
+            graceDaysRemaining: currentUser.graceDaysRemaining,
+          } : {};
+          currentUser = Object.assign({
             email: profile.email,
             name: fullName || profile.email.split('@')[0],
             avatar: (fullName || profile.email).charAt(0).toUpperCase(),
             plan: profile.plan || 'freemium',
             maxDocs: planMaxDocs(profile.plan),
-          };
+          }, _prevLimitFields);
           localStorage.setItem('langa_user', JSON.stringify(currentUser));
           document.getElementById('nav-avatar').textContent = currentUser.avatar;
           document.getElementById('nav-name').textContent = currentUser.name;
@@ -6947,6 +6956,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           planEl.className = 'plan-chip ' + (currentUser.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
           _syncAvatarMenuPlan(_planLabel(currentUser.plan));
           document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
+          renderSidebar();
         }).catch(function(){}),
         _docsPromise,
       ]);
