@@ -5940,10 +5940,32 @@ async function renderTeamSection() {
   var content = document.getElementById('team-content');
   if (!card || !content) return;
 
-  if (!currentUser || currentUser.plan !== 'max') {
+  if (!currentUser) {
     card.style.display = 'none';
     return;
   }
+
+  // Members join someone else's team regardless of their own plan, so the
+  // max-plan gate below only applies to users with no team involvement at
+  // all — a member on a lower plan must still see this card and be able to
+  // leave. Fetch first, then decide visibility from the real role.
+  if (currentUser.plan !== 'max') {
+    var precheck;
+    try {
+      precheck = await api('GET', '/teams/my-team');
+    } catch (e) {
+      card.style.display = 'none';
+      return;
+    }
+    if (precheck.role !== 'member') {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = 'block';
+    renderTeamSectionMemberView(content, precheck);
+    return;
+  }
+
   card.style.display = 'block';
   content.innerHTML = '<div class="spin" style="margin:20px auto;"></div>';
 
@@ -5956,9 +5978,7 @@ async function renderTeamSection() {
   }
 
   if (data.role === 'member') {
-    content.innerHTML =
-      '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">You\'re a member of a team owned by <strong>' + esc(data.team.owner_first_name || 'another user') + '</strong>.</div>' +
-      '<div style="font-size:11px;color:var(--subtle);">Joined ' + new Date(data.team.joined_at).toLocaleDateString('en-ZA') + '</div>';
+    renderTeamSectionMemberView(content, data);
     return;
   }
 
@@ -6002,6 +6022,30 @@ async function renderTeamSection() {
   }
 
   content.innerHTML = html;
+}
+
+// Member-side Settings → Team card: read-only team info plus a Leave option.
+// Shared with both the max-plan and non-max-plan render paths above.
+function renderTeamSectionMemberView(content, data) {
+  content.innerHTML =
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">You\'re a member of a team owned by <strong>' + esc(data.team.owner_first_name || 'another user') + '</strong>.</div>' +
+    '<div style="font-size:11px;color:var(--subtle);margin-bottom:14px;">Joined ' + new Date(data.team.joined_at).toLocaleDateString('en-ZA') + '</div>' +
+    '<button onclick="leaveTeam()" style="background:none;border:1px solid var(--red);border-radius:var(--rs);padding:7px 14px;cursor:pointer;font-size:12px;font-weight:600;color:var(--red);font-family:Sora,sans-serif;">Leave team</button>';
+}
+
+async function leaveTeam() {
+  if (!confirm('Leave this team? You\'ll immediately lose access to any documents shared with you, and the team owner will be notified.')) return;
+  try {
+    await api('DELETE', '/teams/membership');
+    myTeamInfo = { role: null, team: null };
+    sharedDocs = [];
+    myTeamMembersCache = null; // stale — the document-share toggle list must re-fetch
+    toast('You\'ve left the team', '', 'info');
+    renderTeamSection();
+    renderDashboardDocTabs(); // Team Documents tab disappears immediately
+  } catch (e) {
+    toast('Could not leave team', apiErrMsg(e), 'warn');
+  }
 }
 
 async function sendTeamInvite() {
