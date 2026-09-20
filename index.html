@@ -3505,6 +3505,7 @@ async function doLogin() {
         }
       }).catch(function(){}),
       loadUserDocuments(),
+      _checkPendingInviteAfterLogin(),
     ]);
   } catch(e) {
     var errMsg = (e.message || '').toLowerCase();
@@ -3662,15 +3663,36 @@ async function doResetPassword() {
 // TEAM INVITE (landing page for the emailed accept link)
 // ═══════════════════════════════════
 var teamInviteToken = null;
+var _PENDING_INVITE_KEY = 'langa_pending_invite_token';
 
 function showTeamInvitePage(token) {
   teamInviteToken = token;
+  // Persisted (not just kept in the JS variable) so it survives the
+  // login-page redirect even across a hard reload, not just an in-SPA
+  // view switch — doLogin() checks this after a successful sign-in.
+  try { sessionStorage.setItem(_PENDING_INVITE_KEY, token); } catch (e) {}
   hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-reset'); hide('page-confirm'); hide('page-app');
   document.getElementById('app-footer').style.display = 'none';
   var bnav = document.getElementById('mobile-bottom-nav');
   if (bnav) bnav.style.display = 'none';
   show('page-team-invite');
   loadTeamInvitePreview();
+}
+
+// Called after a successful login — completes an invite accept that started
+// on the invite-preview page (Sign in / Create account) and got interrupted
+// by the login redirect. No-op if there's no pending invite.
+async function _checkPendingInviteAfterLogin() {
+  var pendingToken;
+  try { pendingToken = sessionStorage.getItem(_PENDING_INVITE_KEY); } catch (e) { pendingToken = null; }
+  if (!pendingToken) return;
+  try { sessionStorage.removeItem(_PENDING_INVITE_KEY); } catch (e) {}
+  try {
+    var result = await api('POST', '/teams/accept/' + pendingToken);
+    toast("You're on the team!", "You're now part of " + (result.owner_name || 'the') + "'s team.", 'success', 7000);
+  } catch (e) {
+    toast('Could not join team', apiErrMsg(e), 'warn', 7000);
+  }
 }
 
 async function loadTeamInvitePreview() {
@@ -3747,6 +3769,7 @@ async function acceptTeamInvite() {
   try {
     await api('POST', '/teams/accept/' + teamInviteToken);
     teamInviteToken = null;
+    try { sessionStorage.removeItem(_PENDING_INVITE_KEY); } catch (e) {}
     hide('page-team-invite');
     await loadUserDocuments();
     showApp();
