@@ -743,10 +743,12 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
   #core-features > div,
   #solutions > div,
   #pricing > div,
+  #what-langa-is > div,
   #about > div { padding-left: 16px !important; padding-right: 16px !important; }
 
   #features > div > div,
-  #core-features > div > div:last-child {
+  #core-features > div > div:last-child,
+  #what-langa-is > div > div {
     grid-template-columns: 1fr !important;
     gap: 14px !important;
   }
@@ -1571,8 +1573,8 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M5 3l.5 1.5L7 5l-1.5.5L5 7l-.5-1.5L3 5l1.5-.5z"/><path d="M19 15l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5L17 17l1.5-.5z"/></svg>
           Understanding the Fine Print
         </div>
-        <h1 style="font-family:'DM Serif Display',serif;font-size:52px;line-height:1.1;color:var(--navy);margin-bottom:20px;">Bring Light to Your<br>Important Documents</h1>
-        <p style="font-size:17px;color:var(--body);line-height:1.75;margin-bottom:32px;max-width:480px;">Langa Intelligence helps you protect what matters by using artificial intelligence to track, analyse, and simplify the management of contracts, warranties, and terms — bringing clarity and control to the fine print.</p>
+        <h1 style="font-family:'DM Serif Display',serif;font-size:52px;line-height:1.1;color:var(--navy);margin-bottom:20px;">Understand what you sign — before, during, and after.</h1>
+        <p style="font-size:17px;color:var(--body);line-height:1.75;margin-bottom:32px;max-width:480px;">Langa reads the fine print, tracks the dates that matter, and reminds you before it's too late — for contracts you're about to sign, and the ones already shaping your life.</p>
         <div style="display:flex;gap:14px;flex-wrap:wrap;">
           <button class="btn btn-lg" onclick="showSignup()" style="background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;display:flex;align-items:center;gap:8px;">
             Start Managing Documents
@@ -1606,6 +1608,30 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             <div style="width:32px;height:32px;border-radius:8px;background:var(--green-l);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">📱</div>
             <div><div style="font-size:12px;font-weight:600;color:var(--ink);">Mobile Service Contract</div><div style="font-size:10px;color:var(--muted);">✓ Active · Upgrade eligible</div></div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT LANGA IS / IS NOT -->
+  <section id="what-langa-is" style="background:var(--bg);padding:80px 24px;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:48px;">
+        <h2 style="font-family:'DM Serif Display',serif;font-size:40px;color:var(--navy);margin-bottom:12px;">What Langa Is — and Isn't</h2>
+        <p style="font-size:16px;color:var(--muted);">Setting the right expectations, upfront.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="lp-why-card" style="padding:28px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#ECFEFF,#fff);">
+          <h3 style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:16px;">What Langa is</h3>
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;"><span style="color:var(--green);font-weight:700;flex-shrink:0;">✓</span><span style="font-size:14px;color:var(--muted);line-height:1.7;">A contract clarity companion — before, during, and after you sign</span></div>
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;"><span style="color:var(--green);font-weight:700;flex-shrink:0;">✓</span><span style="font-size:14px;color:var(--muted);line-height:1.7;">Plain English explanations of what you're agreeing to</span></div>
+          <div style="display:flex;align-items:flex-start;gap:10px;"><span style="color:var(--green);font-weight:700;flex-shrink:0;">✓</span><span style="font-size:14px;color:var(--muted);line-height:1.7;">Reminders for the dates you agreed to but life made you forget</span></div>
+        </div>
+        <div class="lp-why-card" style="padding:28px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#FEF2F2,#fff);">
+          <h3 style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:16px;">What Langa is not</h3>
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;"><span style="color:var(--red);font-weight:700;flex-shrink:0;">✕</span><span style="font-size:14px;color:var(--muted);line-height:1.7;">Not a law firm, and it doesn't give legal advice</span></div>
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;"><span style="color:var(--red);font-weight:700;flex-shrink:0;">✕</span><span style="font-size:14px;color:var(--muted);line-height:1.7;">Not a financial advisor</span></div>
+          <div style="display:flex;align-items:flex-start;gap:10px;"><span style="color:var(--red);font-weight:700;flex-shrink:0;">✕</span><span style="font-size:14px;color:var(--muted);line-height:1.7;">Not a substitute for professional advice on major decisions</span></div>
         </div>
       </div>
     </div>
