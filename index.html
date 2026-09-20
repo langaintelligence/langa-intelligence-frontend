@@ -2296,7 +2296,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       </div>
       <div class="tab-panel active" id="tp-summary"><div id="dm-summary"></div></div>
       <div class="tab-panel" id="tp-clauses"><div id="dm-clauses"></div></div>
-      <div class="tab-panel" id="tp-info"><div id="dm-info"></div></div>
+      <div class="tab-panel" id="tp-info"><div id="dm-info"></div><div id="dm-share-section" class="hidden"></div></div>
     </div>
 
     <!-- action strip -->
@@ -2325,7 +2325,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
         </button>
       </div>
       <!-- Tertiary - delete, subtle -->
-      <div style="text-align:center;">
+      <div style="text-align:center;" id="dm-delete-btn">
         <button onclick="askDelete(currentDoc&&currentDoc.id);closeDetail()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--subtle);font-family:Sora,sans-serif;padding:4px 8px;border-radius:6px;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--subtle)'">
           Delete this document
         </button>
@@ -3058,6 +3058,9 @@ function apiDocToLocal(apiDoc, analysis) {
     isArchived: !!(apiDoc.is_archived),
     category: apiDoc.category || 'other',
     reminders: [],
+    isShared: !!apiDoc.is_shared,
+    sharedBy: apiDoc.shared_by || null,
+    sharedWith: apiDoc.shared_with || [],
     _fromApi: true,
   };
 }
@@ -3148,6 +3151,13 @@ async function _loadDocsPage(page) {
     });
     var existingIds = new Set(userDocs.map(function(d){ return d.id; }));
     newDocs.forEach(function(d){ if (!existingIds.has(d.id)) userDocs.push(d); });
+
+    // Shared-with-me documents aren't paginated by the backend — it returns
+    // the caller's full shared list every time, so only refresh it on page 1.
+    if (page === 1 && resp && Array.isArray(resp.shared_documents)) {
+      sharedDocs = resp.shared_documents.map(function(d) { return apiDocToLocal(d, null); });
+    }
+
     renderCatFilter();
     renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
   } catch(e) {
@@ -3302,6 +3312,8 @@ const BASE_DOCS_PRO = [
 
 let currentUser = null;
 let userDocs = [];
+let sharedDocs = []; // documents explicitly shared with the current user via a team
+var myTeamMembersCache = null; // null = not fetched yet this session; [] = fetched, no team/no members
 var activeCatFilter = 'all';
 var docsPage = 1;
 var docsHasMore = false;
@@ -4050,13 +4062,17 @@ function renderDocs() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var sf = document.getElementById('status-filter').value;
   var tf = document.getElementById('type-filter').value;
-  var filtered = userDocs.filter(function(d) {
+  var docFilter = function(d) {
     var ms = !q || d.name.toLowerCase().includes(q) || (d.provider||'').toLowerCase().includes(q);
     var mst = sf === 'all' || d.status === sf;
     var mt = tf === 'all' || d.type === tf;
     var mc = activeCatFilter === 'all' || (d.category || 'other') === activeCatFilter;
     return ms && mst && mt && mc;
-  });
+  };
+  // Own documents first, then documents shared with the caller — kept in the
+  // same grid but each shared card gets a distinct "Shared by" badge and no
+  // delete control, so the two are never visually indistinguishable.
+  var filtered = userDocs.filter(docFilter).concat(sharedDocs.filter(docFilter));
   var icons = {contract:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', warranty:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', insurance:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', agreement:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'};
   document.getElementById('doc-grid').innerHTML = filtered.map(function(d) {
     var statusLabel = d.status==='active'?'Active':d.status==='expiring-soon'?'Expiring Soon':'Expired';
@@ -4083,10 +4099,11 @@ function renderDocs() {
     }
 
     return '<div class="doc-card" data-docid="'+d.id+'" onclick="openDetail(this.dataset.docid)">' +
-      '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document">✕</div>' +
+      (d.isShared ? '' : '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document">✕</div>') +
       '<div class="dc-top">' +
         '<div class="dc-icon" style="background:'+iconBg+'">'+(icons[d.type]||'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>')+'</div>' +
         '<div class="dc-badges">' +
+          (d.isShared ? '<span class="badge plan-pro" style="background:var(--blue-l);color:var(--blue);">&#128101; Shared by '+esc(d.sharedBy || 'team owner')+'</span>' : '') +
           '<span class="badge '+statusClass+'">'+statusLabel+'</span>' +
           '<span class="badge '+riskToBadgeClass(d.risk)+'">'+d.riskLabel+'</span>' +
           (d.isScanned ? '<span class="badge badge-scanned">📷 Scanned</span>' : '') +
@@ -4141,7 +4158,7 @@ function riskToBadgeClass(r){ return isHighRisk(r)?'badge-attention':isMedRisk(r
 function riskToBannerClass(r){ return isHighRisk(r)?'rb-attention':isMedRisk(r)?'rb-review':'rb-clear'; }
 
 function openDetail(id) {
-  var doc = userDocs.find(function(d){ return d.id === id; });
+  var doc = userDocs.find(function(d){ return d.id === id; }) || sharedDocs.find(function(d){ return d.id === id; });
   if (!doc) return;
   if (doc.isArchived) { showUpgradeModal(); return; }
   currentDoc = doc;
@@ -4153,8 +4170,20 @@ function openDetail(id) {
   var statusClass = doc.status === 'active' ? 'badge-active' : doc.status === 'expiring-soon' ? 'badge-expiring' : 'badge-expired';
   var badgeCls = riskToBadgeClass(doc.risk);
   document.getElementById('dm-badges').innerHTML =
+    (doc.isShared ? '<span class="badge plan-pro" style="background:var(--blue-l);color:var(--blue);">&#128101; Shared by ' + esc(doc.sharedBy || 'team owner') + '</span>' : '') +
     '<span class="badge ' + statusClass + '">' + statusLabel + '</span>' +
     '<span class="badge ' + badgeCls + '">' + esc(doc.riskLabel || doc.risk) + '</span>';
+
+  // ── Read-only gating for shared documents ──────────────────────────────────
+  // Backend enforces this too (grants never satisfy the owner-only checks on
+  // mutation endpoints) — this just keeps the controls from being shown at all.
+  var chatBtn = document.getElementById('dm-chat-btn');
+  var reminderBtn = document.getElementById('dm-reminder-btn');
+  var reanalyseBtn = document.getElementById('dm-reanalyse-btn');
+  var deleteBtn = document.getElementById('dm-delete-btn');
+  [chatBtn, reminderBtn, reanalyseBtn, deleteBtn].forEach(function(el) {
+    if (el) el.style.display = doc.isShared ? 'none' : '';
+  });
 
   // ── Risk banner ──────────────────────────────────────────────────────────
   var bannerCls = riskToBannerClass(doc.risk);
@@ -4202,7 +4231,7 @@ function openDetail(id) {
     summaryHTML +=
       '<div style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px dashed var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
         '<span style="font-size:12px;color:var(--muted);">' + missingLabel + '</span>' +
-        '<a id="extract-dates-btn" href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="font-size:12px;font-weight:600;color:var(--blue);white-space:nowrap;text-decoration:none;">Refresh &#8594;</a>' +
+        (doc.isShared ? '' : '<a id="extract-dates-btn" href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="font-size:12px;font-weight:600;color:var(--blue);white-space:nowrap;text-decoration:none;">Refresh &#8594;</a>') +
       '</div>';
   }
   document.getElementById('dm-summary').innerHTML = summaryHTML;
@@ -4239,7 +4268,7 @@ function openDetail(id) {
       '<div class="detail-item"><div class="di-label">Provider</div><div class="di-val">' + (doc.provider ? esc(doc.provider) : '<span style="color:var(--muted);font-style:italic;">Not specified</span>') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Document type</div><div class="di-val">' + esc(doc.type ? doc.type.charAt(0).toUpperCase() + doc.type.slice(1) : 'Contract') + '</div></div>' +
       '<div class="detail-item"><div class="di-label">Upload date</div><div class="di-val">' + (doc.uploadDate ? new Date(doc.uploadDate).toLocaleDateString('en-ZA') : 'Today') + '</div></div>' +
-      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (fmtDate(doc.expiryDate) || (doc.is_analysed ? '<a href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;">Extract &#8594;</a>' : '—')) + '</div></div>' +
+      '<div class="detail-item"><div class="di-label">Expiry date</div><div class="di-val">' + (fmtDate(doc.expiryDate) || (doc.is_analysed && !doc.isShared ? '<a href="#" onclick="refreshDates(\'' + doc.id + '\');return false;" style="color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;">Extract &#8594;</a>' : '—')) + '</div></div>' +
       (doc.coverageAmount ? '<div class="detail-item"><div class="di-label">Coverage amount</div><div class="di-val">' + esc(doc.coverageAmount) + '</div></div>' : '') +
     '</div>';
 
@@ -4258,6 +4287,9 @@ function openDetail(id) {
   }
 
   document.getElementById('dm-info').innerHTML = infoHTML;
+
+  // ── Share with team (owner's own documents only) ────────────────────────
+  if (!doc.isShared) { renderShareSection(doc); } else { hide('dm-share-section'); }
 
   // ── Activate summary tab ─────────────────────────────────────────────────
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
@@ -4282,6 +4314,70 @@ function closeDetail() {
   }
 }
 function closeDetailIfBg(e) { if(e.target===document.getElementById('detail-overlay')) closeDetail(); }
+
+// ── Share with team (owner's own document detail view, Max plan only) ──────
+async function renderShareSection(doc) {
+  var section = document.getElementById('dm-share-section');
+  if (!section) return;
+  if (!currentUser || currentUser.plan !== 'max') { hide('dm-share-section'); return; }
+
+  if (myTeamMembersCache === null) {
+    try {
+      var teamData = await api('GET', '/teams/my-team');
+      myTeamMembersCache = (teamData.role === 'owner') ? (teamData.team.members || []) : [];
+    } catch (e) {
+      myTeamMembersCache = [];
+    }
+  }
+  if (myTeamMembersCache.length === 0) { hide('dm-share-section'); return; }
+
+  // Guards against a slow /teams/my-team fetch resolving after the modal has
+  // already moved on to a different document.
+  if (!currentDoc || currentDoc.id !== doc.id) return;
+
+  var sharedWithIds = (doc.sharedWith || []).map(function(m) { return m.user_id; });
+  var html = '<div class="section-lbl" style="margin-top:16px;">Share with team</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px;">' +
+    myTeamMembersCache.map(function(m) {
+      var name = ((m.first_name || '') + ' ' + (m.last_name || '')).trim() || 'Team member';
+      var isChecked = sharedWithIds.indexOf(m.user_id) !== -1;
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg);border-radius:var(--rs);">' +
+        '<span style="font-size:13px;">' + esc(name) + '</span>' +
+        '<div class="toggle-switch' + (isChecked ? ' on' : '') + '" onclick="toggleDocShare(\'' + doc.id + '\',\'' + m.user_id + '\',this)"></div>' +
+      '</div>';
+    }).join('') +
+    '</div>';
+  section.innerHTML = html;
+  section.classList.remove('hidden');
+}
+
+async function toggleDocShare(docId, userId, toggleEl) {
+  var willShare = !toggleEl.classList.contains('on');
+  toggleEl.classList.toggle('on', willShare); // optimistic
+  try {
+    if (willShare) {
+      await api('POST', '/teams/documents/' + docId + '/share', { user_id: userId });
+    } else {
+      await api('DELETE', '/teams/documents/' + docId + '/share/' + userId);
+    }
+    // Keep currentDoc.sharedWith in sync so re-opening this document reflects
+    // reality without another round-trip.
+    if (currentDoc && currentDoc.id === docId) {
+      currentDoc.sharedWith = currentDoc.sharedWith || [];
+      if (willShare) {
+        if (!currentDoc.sharedWith.some(function(m){ return m.user_id === userId; })) {
+          currentDoc.sharedWith.push({ user_id: userId });
+        }
+      } else {
+        currentDoc.sharedWith = currentDoc.sharedWith.filter(function(m){ return m.user_id !== userId; });
+      }
+    }
+    toast(willShare ? 'Access granted' : 'Access revoked', '', 'success', 2500);
+  } catch (e) {
+    toggleEl.classList.toggle('on', !willShare); // revert on failure
+    toast('Could not update sharing', apiErrMsg(e), 'warn');
+  }
+}
 
 async function refreshDates(docId) {
   var btn = document.getElementById('extract-dates-btn') || document.querySelector('a[onclick*="refreshDates"]');
@@ -5828,6 +5924,7 @@ async function removeTeamMember(userId) {
   if (!confirm('Remove this person from your team? Their own account and documents are unaffected.')) return;
   try {
     await api('DELETE', '/teams/members/' + userId);
+    myTeamMembersCache = null; // stale — the document-share toggle list must re-fetch
     toast('Member removed', 'They have been removed from your team.', 'info');
     renderTeamSection();
   } catch (e) {
