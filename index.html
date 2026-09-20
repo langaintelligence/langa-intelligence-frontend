@@ -2140,25 +2140,39 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <div id="insights-list"></div>
         </div>
         <div id="upload-area"></div>
-        <div class="cat-filter-bar" id="cat-filter-bar"></div>
-        <div class="filter-row">
-          <input type="text" id="search-input" placeholder="Search documents or providers..." oninput="filterDocs()">
-          <select class="filter-select" id="status-filter" onchange="filterDocs()">
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="expiring-soon">Expiring Soon</option>
-            <option value="expired">Expired</option>
-          </select>
-          <select class="filter-select" id="type-filter" onchange="filterDocs()">
-            <option value="all">All Types</option>
-            <option value="insurance">Insurance</option>
-            <option value="warranty">Warranty</option>
-            <option value="contract">Contract</option>
-            <option value="agreement">Agreement</option>
-          </select>
+
+        <!-- Only shown at all for users with team involvement — see
+             renderDashboardDocTabs(). Zero change for standalone users. -->
+        <div class="tabs" id="dash-doc-tabs" style="display:none;">
+          <div class="tab active" id="dash-tab-mine" onclick="switchDashboardDocsTab('mine', this)">My Documents</div>
+          <div class="tab" id="dash-tab-team" onclick="switchDashboardDocsTab('team', this)">Team Documents</div>
         </div>
-        <div class="doc-grid" id="doc-grid"></div>
-        <div id="doc-list-footer"></div>
+
+        <div class="tab-panel active" id="dash-panel-mine">
+          <div class="cat-filter-bar" id="cat-filter-bar"></div>
+          <div class="filter-row">
+            <input type="text" id="search-input" placeholder="Search documents or providers..." oninput="filterDocs()">
+            <select class="filter-select" id="status-filter" onchange="filterDocs()">
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="expiring-soon">Expiring Soon</option>
+              <option value="expired">Expired</option>
+            </select>
+            <select class="filter-select" id="type-filter" onchange="filterDocs()">
+              <option value="all">All Types</option>
+              <option value="insurance">Insurance</option>
+              <option value="warranty">Warranty</option>
+              <option value="contract">Contract</option>
+              <option value="agreement">Agreement</option>
+            </select>
+          </div>
+          <div class="doc-grid" id="doc-grid"></div>
+          <div id="doc-list-footer"></div>
+        </div>
+
+        <div class="tab-panel" id="dash-panel-team">
+          <div class="doc-grid" id="team-doc-grid"></div>
+        </div>
       </div>
 
       <!-- REMINDERS -->
@@ -3112,15 +3126,21 @@ async function _loadDocsPage(page) {
   if (docsLoading) return;
   docsLoading = true;
   try {
-    // Page 1: fetch document list (analysis data embedded) + all reminders in parallel.
-    // Page 2+: fetch next doc page only — reminders already loaded in _remindersByDoc.
+    // Page 1: fetch document list (analysis data embedded) + all reminders +
+    // team role (for the My/Team Documents tab — every user, not just Max
+    // plan owners, since a member can be on any plan) in parallel.
+    // Page 2+: fetch next doc page only — the others don't change per-page.
     var remindersPromise = (page === 1)
       ? api('GET', '/reminders').catch(function() { return { reminders: [] }; })
       : Promise.resolve(null);
+    var teamInfoPromise = (page === 1)
+      ? api('GET', '/teams/my-team').catch(function() { return { role: null, team: null }; })
+      : Promise.resolve(null);
 
-    var [resp, remindersResp] = await Promise.all([
+    var [resp, remindersResp, teamInfoResp] = await Promise.all([
       api('GET', '/documents?page=' + page + '&limit=10'),
       remindersPromise,
+      teamInfoPromise,
     ]);
 
     var docs = (resp && Array.isArray(resp.documents)) ? resp.documents : (Array.isArray(resp) ? resp : []);
@@ -3157,9 +3177,13 @@ async function _loadDocsPage(page) {
     if (page === 1 && resp && Array.isArray(resp.shared_documents)) {
       sharedDocs = resp.shared_documents.map(function(d) { return apiDocToLocal(d, null); });
     }
+    if (page === 1 && teamInfoResp) {
+      myTeamInfo = teamInfoResp;
+    }
 
     renderCatFilter();
     renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
+    renderDashboardDocTabs();
   } catch(e) {
     if (e.type === 'network' || e.type === 'server') toast('Error', 'Could not load documents. Please refresh.', 'warn');
   } finally {
@@ -3314,6 +3338,7 @@ let currentUser = null;
 let userDocs = [];
 let sharedDocs = []; // documents explicitly shared with the current user via a team
 var myTeamMembersCache = null; // null = not fetched yet this session; [] = fetched, no team/no members
+var myTeamInfo = null; // raw GET /teams/my-team response — { role: 'owner'|'member'|null, team: {...}|null }
 var activeCatFilter = 'all';
 var docsPage = 1;
 var docsHasMore = false;
@@ -4058,6 +4083,68 @@ function renderUploadArea() {
 
 
 
+var _DOC_TYPE_ICONS = {contract:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', warranty:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', insurance:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', agreement:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'};
+
+// Shared by both #doc-grid (My Documents) and #team-doc-grid (Team Documents)
+// card rendering — extracted so the two views stay visually identical aside
+// from their attribution badge.
+function _buildDocCardHtml(d) {
+  var statusLabel = d.status==='active'?'Active':d.status==='expiring-soon'?'Expiring Soon':'Expired';
+  var statusClass = d.status==='active'?'badge-active':d.status==='expiring-soon'?'badge-expiring':'badge-expired';
+  var iconBg = isHighRisk(d.risk)?'var(--red-l)':isMedRisk(d.risk)?'var(--amber-l)':'var(--blue-l)';
+
+  // Archived doc: locked overlay, delete always available
+  if (d.isArchived) {
+    return '<div class="doc-card" data-docid="'+d.id+'" onclick="showUpgradeModal()" style="position:relative;cursor:pointer;">' +
+      '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document" style="position:relative;z-index:3;">✕</div>' +
+      '<div style="position:absolute;inset:0;background:rgba(15,23,42,0.6);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;gap:8px;pointer-events:none;">' +
+        '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+        '<div style="color:#fff;font-size:13px;font-weight:600;text-align:center;padding:0 12px;">Archived — Upgrade to restore access</div>' +
+      '</div>' +
+      '<div style="opacity:0.35;">' +
+        '<div class="dc-top">' +
+          '<div class="dc-icon" style="background:'+iconBg+'">'+(_DOC_TYPE_ICONS[d.type]||'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>')+'</div>' +
+          '<div class="dc-badges"><span class="badge badge-expired">Archived</span></div>' +
+        '</div>' +
+        '<div class="dc-name">'+esc(d.name)+'</div>' +
+        '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var sharedWithNames = (d.sharedWith || []).map(function(m){ return m.name; });
+  var attributionBadge = d.isShared
+    ? '<span class="badge plan-pro" style="background:var(--blue-l);color:var(--blue);">&#128101; Shared by '+esc(d.sharedBy || 'team owner')+'</span>'
+    : (sharedWithNames.length
+        ? '<span class="badge plan-pro" style="background:var(--blue-l);color:var(--blue);">&#128101; Shared with '+esc(sharedWithNames.join(', '))+'</span>'
+        : '');
+
+  return '<div class="doc-card" data-docid="'+d.id+'" onclick="openDetail(this.dataset.docid)">' +
+    (d.isShared ? '' : '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document">✕</div>') +
+    '<div class="dc-top">' +
+      '<div class="dc-icon" style="background:'+iconBg+'">'+(_DOC_TYPE_ICONS[d.type]||'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>')+'</div>' +
+      '<div class="dc-badges">' +
+        attributionBadge +
+        '<span class="badge '+statusClass+'">'+statusLabel+'</span>' +
+        '<span class="badge '+riskToBadgeClass(d.risk)+'">'+d.riskLabel+'</span>' +
+        (d.isScanned ? '<span class="badge badge-scanned">📷 Scanned</span>' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="dc-name">'+esc(d.name)+'</div>' +
+    '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
+    ((d.category && d.category !== 'other') ? '<div><span class="doc-cat-badge">'+(_CAT_LABELS[d.category]||d.category)+'</span></div>' : '') +
+    '<div class="dc-meta">'+(d.expiryDate?'<span>📅 Expires: '+fmtDate(d.expiryDate,{day:'numeric',month:'short',year:'numeric'})+'</span>':'<span style="color:var(--subtle)">📅 No expiry date</span>')+(d.coverageAmount?'<span>💰 '+esc(d.coverageAmount)+'</span>':'')+'</div>' +
+    (d.aiInsights[0]?'<div class="dc-insight-wrap"><div class="dc-insight">✨ '+esc(d.aiInsights[0])+'</div><button class="dc-read-more" onclick="event.stopPropagation();toggleInsight(this)">Read more</button></div>':'') +
+    ((d.reminders && d.reminders.length) ? '<div class="doc-reminder-tags">' +
+      d.reminders.map(function(r){
+        var label = r.title || r.reminder_type || 'Reminder';
+        var dateStr = r.remind_at ? ' — ' + new Date(r.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'}) : '';
+        var _rIcon = r.is_auto_created ? '⚡' : '🔔';
+        return '<span class="doc-reminder-tag" onclick="event.stopPropagation();deleteDocReminder(\''+r.id+'\',\''+d.id+'\')" title="'+(r.is_auto_created?'Auto-created reminder':'Manual reminder')+'">'+_rIcon+' '+esc(label)+esc(dateStr)+'</span>';
+      }).join('') + '</div>' : '') +
+  '</div>';
+}
+
 function renderDocs() {
   var q = document.getElementById('search-input').value.toLowerCase();
   var sf = document.getElementById('status-filter').value;
@@ -4069,60 +4156,11 @@ function renderDocs() {
     var mc = activeCatFilter === 'all' || (d.category || 'other') === activeCatFilter;
     return ms && mst && mt && mc;
   };
-  // Own documents first, then documents shared with the caller — kept in the
-  // same grid but each shared card gets a distinct "Shared by" badge and no
-  // delete control, so the two are never visually indistinguishable.
-  var filtered = userDocs.filter(docFilter).concat(sharedDocs.filter(docFilter));
-  var icons = {contract:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', warranty:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', insurance:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', agreement:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'};
-  document.getElementById('doc-grid').innerHTML = filtered.map(function(d) {
-    var statusLabel = d.status==='active'?'Active':d.status==='expiring-soon'?'Expiring Soon':'Expired';
-    var statusClass = d.status==='active'?'badge-active':d.status==='expiring-soon'?'badge-expiring':'badge-expired';
-    var iconBg = isHighRisk(d.risk)?'var(--red-l)':isMedRisk(d.risk)?'var(--amber-l)':'var(--blue-l)';
-
-    // Archived doc: locked overlay, delete always available
-    if (d.isArchived) {
-      return '<div class="doc-card" data-docid="'+d.id+'" onclick="showUpgradeModal()" style="position:relative;cursor:pointer;">' +
-        '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document" style="position:relative;z-index:3;">✕</div>' +
-        '<div style="position:absolute;inset:0;background:rgba(15,23,42,0.6);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;gap:8px;pointer-events:none;">' +
-          '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
-          '<div style="color:#fff;font-size:13px;font-weight:600;text-align:center;padding:0 12px;">Archived — Upgrade to restore access</div>' +
-        '</div>' +
-        '<div style="opacity:0.35;">' +
-          '<div class="dc-top">' +
-            '<div class="dc-icon" style="background:'+iconBg+'">'+(icons[d.type]||'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>')+'</div>' +
-            '<div class="dc-badges"><span class="badge badge-expired">Archived</span></div>' +
-          '</div>' +
-          '<div class="dc-name">'+esc(d.name)+'</div>' +
-          '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
-        '</div>' +
-      '</div>';
-    }
-
-    return '<div class="doc-card" data-docid="'+d.id+'" onclick="openDetail(this.dataset.docid)">' +
-      (d.isShared ? '' : '<div class="dc-delete" onclick="event.stopPropagation();askDelete(\''+d.id+'\')" title="Delete document">✕</div>') +
-      '<div class="dc-top">' +
-        '<div class="dc-icon" style="background:'+iconBg+'">'+(icons[d.type]||'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>')+'</div>' +
-        '<div class="dc-badges">' +
-          (d.isShared ? '<span class="badge plan-pro" style="background:var(--blue-l);color:var(--blue);">&#128101; Shared by '+esc(d.sharedBy || 'team owner')+'</span>' : '') +
-          '<span class="badge '+statusClass+'">'+statusLabel+'</span>' +
-          '<span class="badge '+riskToBadgeClass(d.risk)+'">'+d.riskLabel+'</span>' +
-          (d.isScanned ? '<span class="badge badge-scanned">📷 Scanned</span>' : '') +
-        '</div>' +
-      '</div>' +
-      '<div class="dc-name">'+esc(d.name)+'</div>' +
-      '<div class="dc-type">'+d.type.charAt(0).toUpperCase()+d.type.slice(1)+(d.provider?' · '+esc(d.provider):'')+'</div>' +
-      ((d.category && d.category !== 'other') ? '<div><span class="doc-cat-badge">'+(_CAT_LABELS[d.category]||d.category)+'</span></div>' : '') +
-      '<div class="dc-meta">'+(d.expiryDate?'<span>📅 Expires: '+fmtDate(d.expiryDate,{day:'numeric',month:'short',year:'numeric'})+'</span>':'<span style="color:var(--subtle)">📅 No expiry date</span>')+(d.coverageAmount?'<span>💰 '+esc(d.coverageAmount)+'</span>':'')+'</div>' +
-      (d.aiInsights[0]?'<div class="dc-insight-wrap"><div class="dc-insight">✨ '+esc(d.aiInsights[0])+'</div><button class="dc-read-more" onclick="event.stopPropagation();toggleInsight(this)">Read more</button></div>':'') +
-      ((d.reminders && d.reminders.length) ? '<div class="doc-reminder-tags">' +
-        d.reminders.map(function(r){
-          var label = r.title || r.reminder_type || 'Reminder';
-          var dateStr = r.remind_at ? ' — ' + new Date(r.remind_at + 'T00:00:00').toLocaleDateString('en-ZA',{day:'numeric',month:'short'}) : '';
-          var _rIcon = r.is_auto_created ? '⚡' : '🔔';
-          return '<span class="doc-reminder-tag" onclick="event.stopPropagation();deleteDocReminder(\''+r.id+'\',\''+d.id+'\')" title="'+(r.is_auto_created?'Auto-created reminder':'Manual reminder')+'">'+_rIcon+' '+esc(label)+esc(dateStr)+'</span>';
-        }).join('') + '</div>' : '') +
-    '</div>';
-  }).join('') || '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📄</div><div style="font-size:15px;font-weight:600;color:var(--muted);margin-bottom:6px;">No documents found</div><div style="font-size:13px;color:var(--subtle);">Try adjusting your filters or search query</div></div>';
+  // My Documents — the user's own documents only. Documents shared with the
+  // caller now live exclusively in the separate Team Documents tab.
+  var filtered = userDocs.filter(docFilter);
+  document.getElementById('doc-grid').innerHTML = filtered.map(_buildDocCardHtml).join('') ||
+    '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;opacity:0.3;">📄</div><div style="font-size:15px;font-weight:600;color:var(--muted);margin-bottom:6px;">No documents found</div><div style="font-size:13px;color:var(--subtle);">Try adjusting your filters or search query</div></div>';
   renderDocsAfter();
 }
 
@@ -4422,6 +4460,65 @@ function switchTab(id, el) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
   document.getElementById('tp-'+id).classList.add('active');
+}
+
+// Scoped tab switcher for the dashboard's My Documents / Team Documents
+// toggle — deliberately does NOT touch the global .tab/.tab-panel selectors
+// that switchTab() above uses, so it can't interfere with the document
+// detail modal's own tabs.
+function switchDashboardDocsTab(id, el) {
+  document.getElementById('dash-tab-mine').classList.remove('active');
+  document.getElementById('dash-tab-team').classList.remove('active');
+  document.getElementById('dash-panel-mine').classList.remove('active');
+  document.getElementById('dash-panel-team').classList.remove('active');
+  if (el) el.classList.add('active');
+  document.getElementById('dash-panel-' + id).classList.add('active');
+  if (id === 'team') renderTeamDocGrid();
+}
+
+// Controls whether the My Documents / Team Documents toggle appears at all.
+// Must be a strict no-op for users with no team involvement — the tab bar
+// stays display:none and nothing else changes for them.
+function renderDashboardDocTabs() {
+  var tabs = document.getElementById('dash-doc-tabs');
+  var role = myTeamInfo && myTeamInfo.role;
+  var isOwnerWithShares = role === 'owner' && userDocs.some(function(d) { return d.sharedWith && d.sharedWith.length > 0; });
+  var isMember = role === 'member';
+  var show = isOwnerWithShares || isMember;
+
+  if (!show) {
+    tabs.style.display = 'none';
+    // Reset to My Documents in case a leave/removal just happened and the
+    // Team Documents panel was left active.
+    document.getElementById('dash-tab-mine').classList.add('active');
+    document.getElementById('dash-tab-team').classList.remove('active');
+    document.getElementById('dash-panel-mine').classList.add('active');
+    document.getElementById('dash-panel-team').classList.remove('active');
+    return;
+  }
+
+  tabs.style.display = '';
+  if (document.getElementById('dash-panel-team').classList.contains('active')) {
+    renderTeamDocGrid();
+  }
+}
+
+function renderTeamDocGrid() {
+  var role = myTeamInfo && myTeamInfo.role;
+  var grid = document.getElementById('team-doc-grid');
+  var docs;
+  var emptyMsg;
+
+  if (role === 'owner') {
+    docs = userDocs.filter(function(d) { return d.sharedWith && d.sharedWith.length > 0; });
+    emptyMsg = 'No documents shared yet';
+  } else {
+    docs = sharedDocs;
+    emptyMsg = 'No documents have been shared with you yet';
+  }
+
+  grid.innerHTML = docs.map(_buildDocCardHtml).join('') ||
+    '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;"><div style="font-size:40px;margin-bottom:12px;opacity:0.3;">👥</div><div style="font-size:15px;font-weight:600;color:var(--muted);margin-bottom:6px;">' + esc(emptyMsg) + '</div></div>';
 }
 
 // ═══════════════════════════════════
