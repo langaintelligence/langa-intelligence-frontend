@@ -1836,7 +1836,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <div style="position:absolute;top:12px;right:12px;opacity:0.06;overflow:hidden;width:56px;height:56px;border-radius:4px;"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
           <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Essential</h3>
           <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Individuals</p>
-          <div style="font-size:26px;font-weight:700;color:var(--navy);margin-bottom:2px;">R49<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
+          <div style="font-size:26px;font-weight:700;color:var(--navy);margin-bottom:2px;">R59<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 50 documents/month</div>
           <button class="btn btn-primary btn-full btn-sm" onclick="showSignup()" style="margin-bottom:16px;">Get Started</button>
           <div style="font-size:11px;color:var(--body);display:flex;flex-direction:column;gap:5px;">
@@ -2389,7 +2389,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
         <div style="padding:16px;background:var(--blue-l);border:2px solid var(--blue);border-radius:var(--r);position:relative;display:flex;flex-direction:column;">
           <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:999px;white-space:nowrap;">Most Popular</div>
           <div style="font-weight:700;color:var(--navy);margin-bottom:2px;">Essential</div>
-          <div style="font-size:22px;font-weight:700;color:var(--blue);margin-bottom:10px;">R49<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
+          <div style="font-size:22px;font-weight:700;color:var(--blue);margin-bottom:10px;">R59<span style="font-size:12px;font-weight:400;color:var(--muted);">/mo</span></div>
           <div class="price-feature"><div class="pf-dot dot-yes"></div>50 documents/month</div>
           <div class="price-feature"><div class="pf-dot dot-yes"></div>Full clause analysis</div>
           <div class="price-feature"><div class="pf-dot dot-yes"></div>AI chat</div>
@@ -2621,7 +2621,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             <div class="plan-check"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--cyan),var(--blue));color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:999px;white-space:nowrap;">Recommended</div>
             <div class="plan-opt-name">Essential</div>
-            <div class="plan-opt-price">R49<span>/mo</span></div>
+            <div class="plan-opt-price">R59<span>/mo</span></div>
             <div class="plan-opt-feat">50 documents<br>Smart reminders<br>AI chat per contract</div>
           </div>
           <div class="plan-opt" id="plan-opt-plus" onclick="selectPlan('plus')">
@@ -3829,7 +3829,7 @@ function renderUploadArea() {
         '<div style="margin-bottom:16px;background:transparent;border:1px solid #EF4444;border-radius:12px;padding:16px 20px;">' +
           '<div style="font-size:14px;font-weight:600;color:var(--ink,#F1F5F9);margin-bottom:6px;">&#128194; Some of your documents have been archived</div>' +
           '<div style="font-size:13px;color:var(--muted,#94A3B8);margin-bottom:14px;line-height:1.5;">Upgrade to Essential to restore full access instantly.</div>' +
-          '<button class="btn btn-primary" onclick="showUpgradeModal()">Restore My Documents &#8212; R49/month</button>' +
+          '<button class="btn btn-primary" onclick="showUpgradeModal()">Restore My Documents &#8212; R59/month</button>' +
         '</div>';
     } else {
       var _daysLeft = (currentUser.graceDaysRemaining !== null && currentUser.graceDaysRemaining !== undefined) ? currentUser.graceDaysRemaining : 30;
@@ -3840,7 +3840,7 @@ function renderUploadArea() {
         '<div style="margin-bottom:16px;background:transparent;border:1px solid #00BFFF;border-radius:12px;padding:16px 20px;">' +
           '<div style="font-size:14px;font-weight:600;color:var(--ink,#F1F5F9);margin-bottom:6px;">&#128194; You have ' + _docCnt + ' documents but your ' + _planNm + ' plan includes ' + _planLim + '</div>' +
           '<div style="font-size:13px;color:var(--muted,#94A3B8);margin-bottom:14px;line-height:1.5;">Your older documents will be archived in ' + _daysLeft + ' day' + (_daysLeft !== 1 ? 's' : '') + '. Upgrade to Essential to keep full access.</div>' +
-          '<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Essential &#8212; R49/month</button>' +
+          '<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Essential &#8212; R59/month</button>' +
         '</div>';
     }
   }
@@ -3867,7 +3867,7 @@ function renderUploadArea() {
     uploadHTML =
       '<div class="limit-banner" style="margin-bottom:20px;">' +
         '<div class="lb-title">Freemium limit reached</div>' +
-        '<div class="lb-sub">You\'ve used both your free document slots. Upgrade to Essential (R49/mo) or higher to unlock more uploads, smart reminders, and AI chat.</div>' +
+        '<div class="lb-sub">You\'ve used both your free document slots. Upgrade to Essential (R59/mo) or higher to unlock more uploads, smart reminders, and AI chat.</div>' +
         '<button class="btn btn-primary" onclick="showUpgradeModal()">See upgrade options →</button>' +
       '</div>';
   } else {
@@ -4379,7 +4379,7 @@ function showReminderGate() {
           '<div class="rpg-feat"><div class="rpg-dot" style="background:#06B6D4;"></div>Unlimited AI chat per contract</div>' +
           '<div class="rpg-feat"><div class="rpg-dot" style="background:#06B6D4;"></div>Up to 50 documents + full insights dashboard</div>' +
         '</div>' +
-        '<button onclick="closeReminderGate();showUpgradeModal();" style="width:100%;height:46px;background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:Sora,sans-serif;margin-bottom:10px;">Upgrade to Essential — R49/month</button>' +
+        '<button onclick="closeReminderGate();showUpgradeModal();" style="width:100%;height:46px;background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:Sora,sans-serif;margin-bottom:10px;">Upgrade to Essential — R59/month</button>' +
         '<button onclick="closeReminderGate();" style="width:100%;height:38px;background:none;border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--muted);cursor:pointer;font-family:Sora,sans-serif;">Maybe later</button>' +
       '</div>' +
     '</div>';
@@ -5533,7 +5533,7 @@ function initSettings() {
 
   var isPaid = u.plan !== 'freemium';
   var planLbl = _planLabel(u.plan);
-  var planPrices = { pro: 'R49', plus: 'R99', max: 'R199', freemium: 'R0' };
+  var planPrices = { pro: 'R59', plus: 'R99', max: 'R199', freemium: 'R0' };
   document.getElementById('settings-plan-badge').innerHTML =
     '<span class="plan-chip ' + (isPaid ? 'plan-pro' : 'plan-free') + '" style="display:inline-flex;">' + planLbl + '</span>';
 
@@ -5701,7 +5701,7 @@ function showMonthlyLimitModal() {
         (isPro ? '' :
           '<div style="background:linear-gradient(135deg,#EFF6FF,#ECFEFF);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px;margin-bottom:16px;">' +
             '<div style="font-size:13px;font-weight:700;color:#0F172A;margin-bottom:6px;">Upgrade for more uploads</div>' +
-            '<div style="font-size:12px;color:#334155;line-height:1.6;margin-bottom:10px;">Essential (R49/mo) gives you 50 uploads, Professional (R99/mo) gives you 100, and Max (R199/mo) gives you unlimited — all with AI chat, smart reminders and the full insights dashboard.</div>' +
+            '<div style="font-size:12px;color:#334155;line-height:1.6;margin-bottom:10px;">Essential (R59/mo) gives you 50 uploads, Professional (R99/mo) gives you 100, and Max (R199/mo) gives you unlimited — all with AI chat, smart reminders and the full insights dashboard.</div>' +
             '<button onclick="closeMonthlyLimit();showUpgradeModal();" style="width:100%;height:40px;background:linear-gradient(135deg,#06B6D4,#2563EB);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:Sora,sans-serif;">See upgrade options →</button>' +
           '</div>'
         ) +
@@ -5753,7 +5753,7 @@ async function showBillingModal() {
   } catch(_) {
     _billSummary = {
       plan: currentUser.plan, plan_name: currentUser.plan === 'pro' ? 'Pro' : 'Freemium',
-      plan_status: 'active', price_zar: currentUser.plan === 'pro' ? 49 : 0,
+      plan_status: 'active', price_zar: currentUser.plan === 'pro' ? 59 : 0,
       billing_description: currentUser.plan === 'pro' ? 'Billed monthly' : 'Free forever',
       next_billing_date: null, payment_method: null, invoices: [],
     };
@@ -5795,7 +5795,7 @@ function renderBillingOverview() {
 
   document.getElementById('bill-overview-actions').innerHTML = isPro
     ? '<button class="btn btn-ghost btn-full" style="font-size:12.5px;color:#DC2626;border-color:#FCA5A5;" onclick="showBillCancel()">Cancel subscription →</button>'
-    : '<button class="btn btn-primary btn-full" onclick="closeBilling();showUpgradeModal();">Upgrade to Essential — R49/month</button>';
+    : '<button class="btn btn-primary btn-full" onclick="closeBilling();showUpgradeModal();">Upgrade to Essential — R59/month</button>';
 }
 
 function renderBillingPlans() {
@@ -5804,7 +5804,7 @@ function renderBillingPlans() {
   var planOrder = ['freemium','pro','plus','max'];
   var plans = [
     { key:'freemium', name:'Freemium', price:'Free', desc:'Perfect for getting started', features:['2 documents','Basic AI summaries','Clause highlights'], missing:['Smart reminders','AI chat','Full dashboard'] },
-    { key:'pro',      name:'Essential',      price:'R49/mo', desc:'Full access for individuals', features:['50 documents/month','Full clause analysis','AI chat','Smart reminders','Insights dashboard'], missing:[] },
+    { key:'pro',      name:'Essential',      price:'R59/mo', desc:'Full access for individuals', features:['50 documents/month','Full clause analysis','AI chat','Smart reminders','Insights dashboard'], missing:[] },
     { key:'plus',     name:'Professional',   price:'R99/mo', desc:'More capacity, same great features', features:['100 documents/month','All Essential features','Priority support'], missing:[] },
     { key:'max',      name:'Max',            price:'R199/mo', desc:'For households — up to 5 users', features:['Unlimited documents','Up to 5 user accounts','Shared dashboard','All Professional features'], missing:[] },
   ];
@@ -5889,7 +5889,7 @@ function renderBillingHistory() {
 }
 
 async function doBillChangePlan(plan) {
-  var label = plan === 'pro' ? 'Essential (R49/mo)' : plan === 'plus' ? 'Professional (R99/mo)' : plan === 'max' ? 'Max (R199/mo)' : 'Freemium (Free)';
+  var label = plan === 'pro' ? 'Essential (R59/mo)' : plan === 'plus' ? 'Professional (R99/mo)' : plan === 'max' ? 'Max (R199/mo)' : 'Freemium (Free)';
   if (plan === 'freemium' && currentUser.plan !== 'freemium') {
     if (!confirm('Downgrade to Freemium? You will lose your current plan features at the end of your billing period.')) return;
   }
@@ -6688,7 +6688,7 @@ function showLegalPage(page) {
       <thead><tr><th>Plan</th><th>Price</th><th>Users</th><th>Usage Limits</th></tr></thead>
       <tbody>
         <tr><td>Free</td><td>R0/month</td><td>1</td><td>2 document uploads per month</td></tr>
-        <tr><td>Essential</td><td>R49/month</td><td>1</td><td>50 documents/month, full AI analysis and reminders</td></tr>
+        <tr><td>Essential</td><td>R59/month</td><td>1</td><td>50 documents/month, full AI analysis and reminders</td></tr>
         <tr><td>Professional</td><td>R99/month</td><td>1</td><td>100 documents/month, all Essential features plus priority support</td></tr>
         <tr><td>Max</td><td>R199/month</td><td>Up to 5 users</td><td>Unlimited documents, all Professional features, up to 5 users</td></tr>
       </tbody>
