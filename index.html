@@ -2032,6 +2032,18 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
   </div>
 </div>
 
+<!-- ═══════════ TEAM INVITE ═══════════ -->
+<div id="page-team-invite" class="hidden" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%);padding:20px;">
+  <div class="lp-auth-card" style="background:#fff;border-radius:16px;padding:48px 40px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.35);text-align:center;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <span class="langa-wordmark wm-md"><span class="lw-langa">Langa</span><span class="lw-intel">Intelligence</span></span>
+    </div>
+    <div id="team-invite-body">
+      <div class="spin" style="margin:0 auto;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════ CONFIRM EMAIL ═══════════ -->
 <div id="page-confirm" class="hidden" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0F172A 0%,#1E3A5F 100%);padding:20px;">
   <div class="lp-auth-card" style="background:#fff;border-radius:16px;padding:48px 40px;max-width:420px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.35);text-align:center;">
@@ -2184,6 +2196,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             <div class="card">
               <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bdr);">Your Plan</div>
               <div id="settings-plan-detail"></div>
+            </div>
+
+            <div class="card" id="team-card" style="display:none;">
+              <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bdr);">Team</div>
+              <div id="team-content"></div>
             </div>
 
             <div class="card">
@@ -3638,6 +3655,100 @@ async function doResetPassword() {
     err.style.display = 'block';
   } finally {
     setLoading(btn, false, 'Update password');
+  }
+}
+
+// ═══════════════════════════════════
+// TEAM INVITE (landing page for the emailed accept link)
+// ═══════════════════════════════════
+var teamInviteToken = null;
+
+function showTeamInvitePage(token) {
+  teamInviteToken = token;
+  hide('page-landing'); hide('page-login'); hide('page-signup'); hide('page-reset'); hide('page-confirm'); hide('page-app');
+  document.getElementById('app-footer').style.display = 'none';
+  var bnav = document.getElementById('mobile-bottom-nav');
+  if (bnav) bnav.style.display = 'none';
+  show('page-team-invite');
+  loadTeamInvitePreview();
+}
+
+async function loadTeamInvitePreview() {
+  var body = document.getElementById('team-invite-body');
+  if (!teamInviteToken) { body.innerHTML = '<div style="font-size:13px;color:var(--muted);">Invalid invite link.</div>'; return; }
+
+  // This page is reached via an early-return in the boot sequence, before the
+  // normal session-restore logic runs — so restore it ourselves here if a
+  // session exists, otherwise an already-logged-in user would incorrectly
+  // see the "log in" prompt below.
+  if (!authToken) {
+    var storedRefresh = _loadRT();
+    if (storedRefresh) {
+      refreshToken = storedRefresh;
+      var restored = await _tryRefresh();
+      if (restored) {
+        try {
+          var profile = await api('GET', '/auth/me');
+          var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
+          currentUser = {
+            email: profile.email,
+            name: fullName || profile.email.split('@')[0],
+            avatar: (fullName || profile.email).charAt(0).toUpperCase(),
+            plan: profile.plan || 'freemium',
+            maxDocs: planMaxDocs(profile.plan),
+          };
+        } catch (e) { currentUser = null; }
+      }
+    }
+  }
+
+  var preview;
+  try {
+    preview = await api('GET', '/teams/accept/' + teamInviteToken);
+  } catch (e) {
+    body.innerHTML =
+      '<h2 style="font-size:20px;font-weight:700;color:#0F172A;margin-bottom:10px;">This invite has expired</h2>' +
+      '<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px;">Ask the team owner to send you a new one.</p>' +
+      '<a href="#" onclick="hide(\'page-team-invite\');showLogin();return false;" style="color:var(--blue);font-size:13px;">&larr; Back to sign in</a>';
+    return;
+  }
+
+  var loggedInMatch = authToken && currentUser && currentUser.email && currentUser.email.toLowerCase() === preview.invited_email.toLowerCase();
+
+  if (loggedInMatch) {
+    body.innerHTML =
+      '<h2 style="font-size:20px;font-weight:700;color:#0F172A;margin-bottom:10px;">Join ' + esc(preview.team_owner_name) + '\'s team?</h2>' +
+      '<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:24px;">You\'ll get access to their shared documents. You keep your own account and personal documents.</p>' +
+      '<button class="btn btn-primary btn-full" id="team-invite-accept-btn" onclick="acceptTeamInvite()">Accept invite</button>' +
+      '<div style="margin-top:14px;"><a href="#" onclick="hide(\'page-team-invite\');showApp();return false;" style="color:var(--muted);font-size:12px;">Not now</a></div>';
+    return;
+  }
+
+  var promptLabel = preview.has_account ? 'Sign in' : 'Create account';
+  var promptAction = preview.has_account
+    ? "hide('page-team-invite');document.getElementById('login-email').value=" + JSON.stringify(preview.invited_email) + ";showLogin();"
+    : "hide('page-team-invite');showSignup();";
+  body.innerHTML =
+    '<h2 style="font-size:20px;font-weight:700;color:#0F172A;margin-bottom:10px;">You\'ve been invited</h2>' +
+    '<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:6px;">' + esc(preview.team_owner_name) + ' invited <strong>' + esc(preview.invited_email) + '</strong> to join their team.</p>' +
+    '<p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:24px;">' + (preview.has_account ? 'Log in as that email to accept.' : 'Create an account with that email to accept.') + '</p>' +
+    '<button class="btn btn-primary btn-full" onclick="' + promptAction + '">' + promptLabel + '</button>' +
+    '<p style="font-size:11px;color:var(--subtle);margin-top:16px;">After logging in, open the invite link from your email again to accept.</p>';
+}
+
+async function acceptTeamInvite() {
+  var btn = document.getElementById('team-invite-accept-btn');
+  setLoading(btn, true, 'Joining...');
+  try {
+    await api('POST', '/teams/accept/' + teamInviteToken);
+    teamInviteToken = null;
+    hide('page-team-invite');
+    await loadUserDocuments();
+    showApp();
+    toast('Welcome to the team!', 'You now have access to the shared team documents.', 'success', 6000);
+  } catch (e) {
+    setLoading(btn, false, 'Accept invite');
+    toast('Could not accept invite', apiErrMsg(e), 'warn');
   }
 }
 
@@ -5577,6 +5688,8 @@ function initSettings() {
     (isPaid
       ? '<button class="btn btn-ghost btn-full" style="font-size:12px;" onclick="showBillingModal()">Manage billing →</button>'
       : '<button class="btn btn-primary btn-full" onclick="showUpgradeModal()">See upgrade options →</button>');
+
+  renderTeamSection();
 }
 
 async function saveSettings() {
@@ -5596,6 +5709,113 @@ async function saveSettings() {
   document.getElementById('settings-avatar').textContent = newName.charAt(0).toUpperCase();
   document.getElementById('nav-avatar').textContent = newName.charAt(0).toUpperCase();
   toast('Settings saved', 'Your profile has been updated.', 'success');
+}
+
+// ═══════════════════════════════════
+// TEAM (Settings — Max plan only)
+// ═══════════════════════════════════
+async function renderTeamSection() {
+  var card = document.getElementById('team-card');
+  var content = document.getElementById('team-content');
+  if (!card || !content) return;
+
+  if (!currentUser || currentUser.plan !== 'max') {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  content.innerHTML = '<div class="spin" style="margin:20px auto;"></div>';
+
+  var data;
+  try {
+    data = await api('GET', '/teams/my-team');
+  } catch (e) {
+    content.innerHTML = '<div style="font-size:12px;color:var(--muted);">Could not load team info. Please try again.</div>';
+    return;
+  }
+
+  if (data.role === 'member') {
+    content.innerHTML =
+      '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">You\'re a member of a team owned by <strong>' + esc(data.team.owner_first_name || 'another user') + '</strong>.</div>' +
+      '<div style="font-size:11px;color:var(--subtle);">Joined ' + new Date(data.team.joined_at).toLocaleDateString('en-ZA') + '</div>';
+    return;
+  }
+
+  // role === 'owner' or null (no team yet) — owner-side UI either way,
+  // since only max-plan users reach this card and inviting lazily creates the team.
+  var team = data.team;
+  var members = (team && team.members) || [];
+  var pending = (team && team.pending_invites) || [];
+  var size = (team && team.size) || 0;
+  var maxSize = (team && team.max_size) || 4;
+
+  var html = '';
+  if (size < maxSize) {
+    html +=
+      '<div style="display:flex;gap:8px;margin-bottom:16px;">' +
+        '<input type="email" id="team-invite-email" placeholder="teammate@example.com" style="flex:1;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rs);font-size:13px;font-family:Sora,sans-serif;" onkeydown="if(event.key===\'Enter\')sendTeamInvite()">' +
+        '<button class="btn btn-primary btn-sm" onclick="sendTeamInvite()">Invite</button>' +
+      '</div>';
+  } else {
+    html += '<div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Your team is full (' + maxSize + ' members max).</div>';
+  }
+
+  if (members.length === 0 && pending.length === 0) {
+    html += '<div style="font-size:12px;color:var(--subtle);">No team members yet. Invite up to ' + maxSize + ' people to share your Max plan documents with them.</div>';
+  } else {
+    members.forEach(function(m) {
+      var name = ((m.first_name || '') + ' ' + (m.last_name || '')).trim() || 'Team member';
+      html +=
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr);">' +
+          '<div><div style="font-size:13px;font-weight:500;color:var(--navy);">' + esc(name) + '</div><div style="font-size:11px;color:var(--subtle);">Joined ' + new Date(m.joined_at).toLocaleDateString('en-ZA') + '</div></div>' +
+          '<button onclick="removeTeamMember(\'' + m.user_id + '\')" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--red);font-family:Sora,sans-serif;">Remove</button>' +
+        '</div>';
+    });
+    pending.forEach(function(inv) {
+      html +=
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr);">' +
+          '<div><div style="font-size:13px;font-weight:500;color:var(--navy);">' + esc(inv.email) + '</div><div style="font-size:11px;color:var(--subtle);">Invited &middot; pending</div></div>' +
+          '<button onclick="cancelTeamInvite(\'' + inv.id + '\')" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);font-family:Sora,sans-serif;">Cancel</button>' +
+        '</div>';
+    });
+  }
+
+  content.innerHTML = html;
+}
+
+async function sendTeamInvite() {
+  var input = document.getElementById('team-invite-email');
+  var email = input ? input.value.trim() : '';
+  if (!email) { toast('Email required', 'Please enter an email address.', 'warn'); return; }
+  try {
+    await api('POST', '/teams/invite', { email: email });
+    toast('Invite sent', email + ' has been invited to your team.', 'success');
+    renderTeamSection();
+  } catch (e) {
+    toast('Could not send invite', apiErrMsg(e), 'warn');
+  }
+}
+
+async function removeTeamMember(userId) {
+  if (!confirm('Remove this person from your team? Their own account and documents are unaffected.')) return;
+  try {
+    await api('DELETE', '/teams/members/' + userId);
+    toast('Member removed', 'They have been removed from your team.', 'info');
+    renderTeamSection();
+  } catch (e) {
+    toast('Could not remove member', apiErrMsg(e), 'warn');
+  }
+}
+
+async function cancelTeamInvite(inviteId) {
+  if (!confirm('Cancel this pending invite?')) return;
+  try {
+    await api('DELETE', '/teams/invites/' + inviteId);
+    toast('Invite cancelled', '', 'info');
+    renderTeamSection();
+  } catch (e) {
+    toast('Could not cancel invite', apiErrMsg(e), 'warn');
+  }
 }
 
 function togglePref(id) {
@@ -6892,6 +7112,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     history.replaceState(null, '', window.location.pathname);
     _hideCover();
     showResetPage();
+    return;
+  }
+  if (qp.get('type') === 'team_invite' && qp.get('token')) {
+    var _inviteToken = qp.get('token');
+    history.replaceState(null, '', window.location.pathname);
+    _hideCover();
+    showTeamInvitePage(_inviteToken);
     return;
   }
 
