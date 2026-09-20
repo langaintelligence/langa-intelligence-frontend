@@ -3725,8 +3725,13 @@ async function loadTeamInvitePreview() {
   }
 
   var promptLabel = preview.has_account ? 'Sign in' : 'Create account';
+  // Escaped-single-quote pattern, matching the rest of the codebase's approach
+  // to embedding dynamic values in inline onclick handlers (e.g. the sidebar
+  // rename button) — JSON.stringify() emits double quotes, which collide with
+  // this attribute's own double-quote delimiter and truncate the handler.
+  var escapedInvitedEmail = preview.invited_email.replace(/'/g, "\\'");
   var promptAction = preview.has_account
-    ? "hide('page-team-invite');document.getElementById('login-email').value=" + JSON.stringify(preview.invited_email) + ";showLogin();"
+    ? "hide('page-team-invite');document.getElementById('login-email').value='" + escapedInvitedEmail + "';showLogin();"
     : "hide('page-team-invite');showSignup();";
   body.innerHTML =
     '<h2 style="font-size:20px;font-weight:700;color:#0F172A;margin-bottom:10px;">You\'ve been invited</h2>' +
