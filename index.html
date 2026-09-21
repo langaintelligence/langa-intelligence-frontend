@@ -4377,9 +4377,11 @@ function openDetail(id) {
   if (!doc.isShared) { renderShareSection(doc); } else { hide('dm-share-section'); }
 
   // ── Activate summary tab ─────────────────────────────────────────────────
-  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
-  var firstTab = document.querySelector('.tab');
+  // Scoped to the modal: the dashboard's My/Team Documents tabs and panels
+  // share the .tab/.tab-panel classes and must never be touched from here.
+  document.querySelectorAll('#detail-modal .tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('#detail-modal .tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  var firstTab = document.querySelector('#detail-modal .tab');
   if (firstTab) firstTab.classList.add('active');
   var summaryPanel = document.getElementById('tp-summary');
   if (summaryPanel) summaryPanel.classList.add('active');
@@ -4503,8 +4505,9 @@ async function refreshDates(docId) {
 }
 
 function switchTab(id, el) {
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  // Modal-only tab switcher — scoped so it can't reach the dashboard's tabs/panels.
+  document.querySelectorAll('#detail-modal .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#detail-modal .tab-panel').forEach(p=>p.classList.remove('active'));
   if(el) el.classList.add('active');
   document.getElementById('tp-'+id).classList.add('active');
 }
