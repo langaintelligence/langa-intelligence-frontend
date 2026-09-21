@@ -3003,7 +3003,7 @@ async function api(method, path, body, opts) {
       var refreshed = await _tryRefresh();
       if (refreshed) return api(method, path, body, Object.assign({}, opts, { _noRefresh: true }));
     }
-    authToken = null; refreshToken = null; currentUser = null; userDocs = [];
+    authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null;
     showLogin();
     throw { type: '401', message: 'Session expired. Please log in again.' };
   }
@@ -3080,7 +3080,17 @@ function apiDocToLocal(apiDoc, analysis) {
 }
 
 // ── Load user documents with pagination ──────────────────────────────────────
-async function loadUserDocuments() {
+function loadUserDocuments() {
+  // Concurrent callers (login + invite-accept, etc.) share the in-flight load.
+  // A second call would otherwise reset userDocs mid-flight, show skeletons
+  // over loaded data, and cache an empty list when _loadDocsPage bails out on
+  // its docsLoading guard.
+  if (_docsLoadPromise) return _docsLoadPromise;
+  _docsLoadPromise = _loadUserDocumentsImpl().finally(function() { _docsLoadPromise = null; });
+  return _docsLoadPromise;
+}
+
+async function _loadUserDocumentsImpl() {
   if (!authToken) return;
   // Serve from short-lived cache on rapid re-calls (e.g. page refresh within same session)
   if (_docsCache && (Date.now() - _docsCache.ts) < _DOCS_CACHE_TTL) {
@@ -3347,6 +3357,11 @@ var docsLoaded = false;
 var _docsObserver = null;
 var _remindersByDoc = {};
 var _docsCache = null;
+// True once /auth/me has resolved at least once this session. Until then
+// currentUser.plan/maxDocs may be a cached or placeholder value, so plan-derived
+// UI (e.g. the freemium-limit banner) must not render from it.
+var _profileResolved = false;
+var _docsLoadPromise = null;
 var _DOCS_CACHE_TTL = 60000;
 function _invalidateDocsCache() { _docsCache = null; }
 
@@ -3512,6 +3527,7 @@ async function doLogin() {
     var initialName = (data.first_name && data.first_name.trim())
       ? data.first_name.trim()
       : (data.email || email).split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    _profileResolved = false;
     currentUser = {
       email: email, name: initialName,
       plan: 'freemium', avatar: initialName.charAt(0).toUpperCase(), maxDocs: 2
@@ -3521,18 +3537,7 @@ async function doLogin() {
     // Fetch profile and documents in parallel — update UI as each resolves
     Promise.all([
       api('GET', '/auth/me').then(function(profile) {
-        var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
-        if (fullName) { currentUser.name = fullName; currentUser.avatar = fullName.charAt(0).toUpperCase(); }
-        currentUser.plan = profile.plan || 'freemium';
-        currentUser.maxDocs = planMaxDocs(currentUser.plan);
-        localStorage.setItem('langa_user', JSON.stringify(currentUser));
-        document.getElementById('nav-avatar').textContent = currentUser.avatar;
-        document.getElementById('nav-name').textContent = currentUser.name;
-        var planEl = document.getElementById('nav-plan');
-        planEl.textContent = _planLabel(currentUser.plan);
-        planEl.className = 'plan-chip ' + (currentUser.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
-        _syncAvatarMenuPlan(_planLabel(currentUser.plan));
-        document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
+        applyProfile(profile);
         // Only apply server preference when explicitly set to true.
         // Avoid overriding a locally-stored system preference with the
         // default false that new accounts get before any explicit toggle.
@@ -3582,7 +3587,7 @@ function doLogout() {
       body: JSON.stringify({ refresh_token: refreshToken }),
     }).catch(function(){});
   }
-  authToken = null; refreshToken = null; currentUser = null; userDocs = []; pendingUploadFile = null;
+  authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null; pendingUploadFile = null;
   notifications = [];
   stopNotifPolling();
   localStorage.removeItem('langa_user');
@@ -3613,7 +3618,7 @@ async function doDeleteAccount() {
   }
   // Clear all session state
   _stopInactivityTimer();
-  authToken = null; refreshToken = null; currentUser = null; userDocs = []; pendingUploadFile = null;
+  authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null; pendingUploadFile = null;
   notifications = [];
   stopNotifPolling();
   localStorage.removeItem('langa_user');
@@ -3756,6 +3761,7 @@ async function loadTeamInvitePreview() {
             plan: profile.plan || 'freemium',
             maxDocs: planMaxDocs(profile.plan),
           };
+          _profileResolved = true;
         } catch (e) { currentUser = null; }
       }
     }
@@ -3820,6 +3826,37 @@ async function acceptTeamInvite() {
 // ═══════════════════════════════════
 // APP INIT
 // ═══════════════════════════════════
+// Single entry point for applying a resolved /auth/me profile: updates
+// currentUser + header DOM, then repaints every view that depends on plan /
+// maxDocs (not just the sidebar). Docs-dependent views are only repainted once
+// docs have loaded, so they never overwrite the loading skeletons with an
+// empty state; if docs are still in flight, their own render picks up the
+// resolved plan.
+function applyProfile(profile) {
+  var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
+  // Object.assign onto the existing object keeps live doc-limit fields
+  // (overLimit, grace*, planDocLimit) set by loadUserDocuments().
+  currentUser = Object.assign(currentUser || {}, {
+    email: profile.email,
+    name: fullName || profile.email.split('@')[0],
+    avatar: (fullName || profile.email).charAt(0).toUpperCase(),
+    plan: profile.plan || 'freemium',
+    maxDocs: planMaxDocs(profile.plan),
+  });
+  _profileResolved = true;
+  localStorage.setItem('langa_user', JSON.stringify(currentUser));
+  document.getElementById('nav-avatar').textContent = currentUser.avatar;
+  document.getElementById('nav-name').textContent = currentUser.name;
+  var planEl = document.getElementById('nav-plan');
+  planEl.textContent = _planLabel(currentUser.plan);
+  planEl.className = 'plan-chip ' + (currentUser.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
+  _syncAvatarMenuPlan(_planLabel(currentUser.plan));
+  document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
+  renderSidebar();
+  renderUploadArea();
+  if (docsLoaded) { renderStats(); renderInsights(); renderDocs(); }
+}
+
 function initApp() {
   const u = currentUser;
   document.getElementById('nav-avatar').textContent = u.avatar;
@@ -4024,6 +4061,16 @@ function renderInsights() {
 function renderUploadArea() {
   const area = document.getElementById('upload-area');
   const overLimit = !!(currentUser && currentUser.overLimit);
+
+  // Guard: until /auth/me has resolved, plan/maxDocs may be a cached or
+  // placeholder value. Any limit-dependent state (over-limit banner, freemium
+  // limit banner, locked upload zone) is skipped so a paid user never sees a
+  // wrong upgrade prompt, even momentarily — applyProfile() repaints this once
+  // the real plan is known. Under-limit, the normal upload zone is safe.
+  if (!_profileResolved && (overLimit || userDocs.length >= currentUser.maxDocs)) {
+    area.innerHTML = '';
+    return;
+  }
 
   // Build downgrade banner (shown when user has more docs than plan allows)
   var bannerHTML = '';
@@ -6795,6 +6842,7 @@ async function completeSignup() {
       email: signupData.email, name: name,
       plan: 'freemium', avatar: signupData.first.charAt(0).toUpperCase(), maxDocs: 2
     };
+    _profileResolved = true; // brand-new account: freemium is the real plan, not a placeholder
     userDocs = [];
     hide('page-signup');
     show('page-app');
@@ -7437,6 +7485,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (restored) {
       var cached = null;
       try { cached = JSON.parse(localStorage.getItem('langa_user')); } catch(_) {}
+      _profileResolved = false;
       currentUser = cached || { email: '', name: 'Loading…', avatar: '…', plan: 'freemium', maxDocs: 2 };
       userDocs = [];
       _hideCover();
@@ -7452,32 +7501,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
       Promise.all([
         api('GET', '/auth/me').then(function(profile) {
-          var fullName = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim();
-          // Preserve live doc-limit fields if _docsPromise already set them on the previous
-          // currentUser object — this reassignment would otherwise silently wipe them out.
-          var _prevLimitFields = currentUser ? {
-            planDocLimit: currentUser.planDocLimit,
-            overLimit: currentUser.overLimit,
-            graceExpired: currentUser.graceExpired,
-            graceExpiresAt: currentUser.graceExpiresAt,
-            graceDaysRemaining: currentUser.graceDaysRemaining,
-          } : {};
-          currentUser = Object.assign({
-            email: profile.email,
-            name: fullName || profile.email.split('@')[0],
-            avatar: (fullName || profile.email).charAt(0).toUpperCase(),
-            plan: profile.plan || 'freemium',
-            maxDocs: planMaxDocs(profile.plan),
-          }, _prevLimitFields);
-          localStorage.setItem('langa_user', JSON.stringify(currentUser));
-          document.getElementById('nav-avatar').textContent = currentUser.avatar;
-          document.getElementById('nav-name').textContent = currentUser.name;
-          var planEl = document.getElementById('nav-plan');
-          planEl.textContent = _planLabel(currentUser.plan);
-          planEl.className = 'plan-chip ' + (currentUser.plan !== 'freemium' ? 'plan-pro' : 'plan-free');
-          _syncAvatarMenuPlan(_planLabel(currentUser.plan));
-          document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
-          renderSidebar();
+          applyProfile(profile);
         }).catch(function(){}),
         _docsPromise,
       ]);
