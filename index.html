@@ -615,7 +615,8 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 [data-theme="dark"] .hdr-search-btn svg{color:var(--muted);}
 [data-theme="dark"] .hdr-search-btn:hover{background:rgba(255,255,255,0.08);}
 @media (max-width: 768px) {
-  .hdr-search.open input.hdr-search-input{position:fixed;top:8px;left:16px;right:64px;width:auto;z-index:60;}
+  /* Leaves the search icon (and bell/avatar) uncovered so it can still be tapped to collapse. */
+  .hdr-search.open input.hdr-search-input{position:fixed;top:8px;left:16px;right:148px;width:auto;z-index:60;}
 }
 .notif-bell-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--white);}
 [data-theme="dark"] .notif-bell-btn{background:transparent;box-shadow:none;}
