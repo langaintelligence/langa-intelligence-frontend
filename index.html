@@ -1504,6 +1504,31 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     .app-mini-footer .copyright { display: none; }
   }
 
+/* ═══════════ LANGA COMPARE ═══════════ */
+.cmp-empty{text-align:center;padding:60px 20px;}
+.cmp-empty-icon{font-size:40px;margin-bottom:12px;opacity:0.4;}
+.cmp-empty-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+.cmp-empty-sub{font-size:13px;color:var(--muted);margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto;}
+.cmp-card{background:var(--white);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;cursor:pointer;transition:all 0.2s;}
+.cmp-card:hover{border-color:var(--blue-m);box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.cmp-card-names{font-size:14px;font-weight:600;color:var(--ink);line-height:1.5;}
+.cmp-card-vs{color:var(--muted);font-weight:400;font-size:12px;padding:0 4px;}
+.cmp-card-meta{font-size:12px;color:var(--muted);margin-top:8px;}
+.cmp-picker-doc{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--bdr);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all 0.15s;}
+.cmp-picker-doc:hover{border-color:var(--blue-m);background:var(--bg);}
+.cmp-picker-doc.selected{border-color:var(--blue);background:var(--blue-l);}
+.cmp-picker-doc-name{font-size:13px;font-weight:600;color:var(--ink);}
+.cmp-picker-doc-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.cmp-table{width:100%;border-collapse:collapse;margin-bottom:20px;}
+.cmp-table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);padding:0 12px 10px;}
+.cmp-table th.cmp-th-doc{color:var(--ink);text-transform:none;font-size:13px;letter-spacing:0;}
+.cmp-row td{padding:12px;border-top:1px solid var(--bdr);font-size:13px;vertical-align:top;}
+.cmp-row td:first-child{font-weight:600;color:var(--muted);width:26%;white-space:nowrap;}
+.cmp-cell.favorable{background:var(--green-l);border-radius:var(--rs);}
+.cmp-cell ul{margin:0;padding-left:16px;}
+.cmp-cell li{margin-bottom:2px;}
+.cmp-disclaimer{font-size:12px;color:var(--muted);line-height:1.5;padding:12px 14px;background:var(--bg);border-radius:var(--rs);margin-bottom:18px;}
+
 /* App full-width footer */
 .app-full-footer {
   position: fixed;
@@ -2120,6 +2145,10 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
         Reminders
         <span class="s-badge" id="reminder-badge" style="display:none;"></span>
       </div>
+      <div class="s-item" id="s-item-compare" onclick="showView('compare')" style="display:none;">
+        <svg viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3" width="6.5" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="3" width="6.5" height="14" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 8.5v3M14 8.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Compare
+      </div>
       <div class="s-item" onclick="showView('settings')">
         <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         Settings
@@ -2295,6 +2324,17 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           </div>
         </div>
       </div>
+
+      <!-- COMPARE — hidden entirely for Freemium via #s-item-compare's own
+           display:none; this view is only reachable by clicking that item,
+           so no separate gate is needed here to hide the view itself. -->
+      <div id="view-compare" class="hidden">
+        <div class="page-head">
+          <div><div class="page-title">Langa Compare</div><div class="page-sub">Put two documents side by side — clarity, not advice.</div></div>
+          <button class="btn btn-primary btn-sm" onclick="openComparePicker()">+ New comparison</button>
+        </div>
+        <div id="compare-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2445,6 +2485,68 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
         <button class="btn btn-ghost" onclick="loadDemoContract()">Try demo contract</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════ LANGA COMPARE ═══════════ -->
+<!-- Picker: select two same-category documents, or upload a second one -->
+<div class="overlay hidden" id="compare-picker-overlay" onclick="closeComparePickerIfBg(event)">
+  <div class="modal" id="compare-picker-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="cmp-picker-title">New comparison</div>
+      <button class="modal-close" onclick="closeComparePicker()">✕</button>
+    </div>
+    <div class="modal-body" id="cmp-picker-body"></div>
+  </div>
+</div>
+
+<!-- Detail: cached side-by-side result for one saved comparison -->
+<div class="overlay hidden" id="compare-detail-overlay" onclick="closeCompareDetailIfBg(event)">
+  <div class="modal modal-lg" id="compare-detail-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="cmp-detail-title">Compare</div>
+        <div id="cmp-detail-badges" style="display:flex;gap:6px;margin-top:6px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeCompareDetail()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cmp-disclaimer">Langa Compare highlights differences between these two documents for clarity only — this is not legal or financial advice. Always verify with a qualified professional before deciding.</div>
+      <div id="cmp-detail-table"></div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn btn-primary" onclick="openCompareChat()">Ask Langa about both →</button>
+        <button class="btn btn-ghost" onclick="deleteComparisonFromDetail()">Delete comparison</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scoped chat: same visual pattern as the single-document chat modal -->
+<div class="chat-overlay hidden" id="compare-chat-overlay">
+  <div class="chat-modal">
+    <div class="chat-header">
+      <div class="chat-ai-avatar lai-circle-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:12px;font-weight:700;">L</div>
+      <div style="flex:1;">
+        <div class="chat-header-title">Ask Langa</div>
+        <div class="chat-doc-name">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+          <span id="cmp-chat-doc-name">Comparison</span>
+        </div>
+      </div>
+      <button class="modal-close" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="closeCompareChat()">✕</button>
+    </div>
+    <div class="chat-msgs" id="cmp-chat-messages"></div>
+    <div class="chat-upgrade-wall hidden" id="cmp-chat-upgrade-wall">
+      <div class="cuw-title">You've reached your free chat limit for this month.</div>
+      <div class="cuw-sub">Upgrade for unlimited chat, smarter analysis and more.</div>
+      <button class="btn btn-primary" style="width:100%;max-width:260px;height:44px;font-size:14px;background:linear-gradient(135deg,#06B6D4,#2563EB);" onclick="showUpgradeModal();">Upgrade →</button>
+    </div>
+    <div class="chat-input-row" id="cmp-chat-input-row">
+      <textarea class="chat-input" id="cmp-chat-input" rows="1" placeholder="Ask about both documents..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCompareChat();}" oninput="_resizeChatInput(this)"></textarea>
+      <button class="btn btn-primary" id="cmp-chat-send" onclick="sendCompareChat()">Send</button>
+    </div>
+    <div class="chat-disclaimer">Langa presents trade-offs between both documents — never a recommendation. Always verify with a qualified professional.</div>
+    <div class="chat-powered">Powered by <span style="color:rgba(255,255,255,0.55);">Langa Intelligence</span></div>
   </div>
 </div>
 
@@ -3020,7 +3122,7 @@ async function api(method, path, body, opts) {
       var refreshed = await _tryRefresh();
       if (refreshed) return api(method, path, body, Object.assign({}, opts, { _noRefresh: true }));
     }
-    authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null;
+    authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null; userComparisons = []; comparisonsLoaded = false;
     showLogin();
     throw { type: '401', message: 'Session expired. Please log in again.' };
   }
@@ -3380,6 +3482,14 @@ var _docsCache = null;
 var _profileResolved = false;
 var _docsLoadPromise = null;
 var _DOCS_CACHE_TTL = 60000;
+
+// ── Langa Compare state ──────────────────────────────────────────────────────
+var userComparisons = [];        // cached list for the Compare tab
+var comparisonsLoaded = false;
+var _cmpPickerDocA = null;       // selected first document (local doc object) mid-picker
+var _cmpCurrentComparison = null; // the comparison currently open in the detail modal
+var cmpChatHistory = [];
+var cmpProcessing = false;
 function _invalidateDocsCache() { _docsCache = null; }
 
 function planMaxDocs(plan) { return plan === 'max' ? 999 : plan === 'plus' ? 100 : plan === 'pro' ? 50 : 2; }
@@ -3480,7 +3590,7 @@ function showApp() {
   _startInactivityTimer();
 }
 function showView(view) {
-  ['dashboard','reminders','settings'].forEach(function(v){ hide('view-'+v); });
+  ['dashboard','reminders','settings','compare'].forEach(function(v){ hide('view-'+v); });
   show('view-' + view);
   document.querySelectorAll('.s-item').forEach(function(i){ i.classList.remove('active'); });
   document.querySelectorAll('.s-item').forEach(function(item){
@@ -3494,6 +3604,7 @@ function showView(view) {
   });
   if (view === 'reminders') { renderReminders(); markRemindersVisited(); }
   if (view === 'settings') initSettings();
+  if (view === 'compare') renderCompareView();
   if (!_historyNav) {
     if (view === 'dashboard') {
       _navReplace({ screen: 'app', view: 'dashboard' }, 'dashboard');
@@ -3604,7 +3715,7 @@ function doLogout() {
       body: JSON.stringify({ refresh_token: refreshToken }),
     }).catch(function(){});
   }
-  authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null; pendingUploadFile = null;
+  authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null; userComparisons = []; comparisonsLoaded = false; pendingUploadFile = null;
   notifications = [];
   stopNotifPolling();
   localStorage.removeItem('langa_user');
@@ -3635,7 +3746,7 @@ async function doDeleteAccount() {
   }
   // Clear all session state
   _stopInactivityTimer();
-  authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null; pendingUploadFile = null;
+  authToken = null; refreshToken = null; currentUser = null; userDocs = []; _profileResolved = false; _docsLoadPromise = null; userComparisons = []; comparisonsLoaded = false; pendingUploadFile = null;
   notifications = [];
   stopNotifPolling();
   localStorage.removeItem('langa_user');
@@ -3907,6 +4018,12 @@ function renderSidebar() {
   boxInner.className = 'plan-inner ' + (isPaid ? 'pro' : 'free');
   document.getElementById('plan-box-title').textContent = _planLabel(currentUser.plan) + ' Plan';
   document.getElementById('upgrade-link').style.display = isPaid ? 'none' : 'block';
+
+  // Compare is a paid-plan feature (Pro/Plus/Max) — hidden entirely for
+  // Freemium, and held hidden until /auth/me has actually resolved so a
+  // stale cached plan can't flash it on for a Freemium user.
+  var cmpItem = document.getElementById('s-item-compare');
+  if (cmpItem) cmpItem.style.display = (_profileResolved && isPaid) ? '' : 'none';
 
   const sb = document.getElementById('sidebar-docs');
   sb.innerHTML = userDocs.map(function(d) {
@@ -7157,6 +7274,361 @@ function showLegalPage(page) {
   btn.style.color = 'var(--blue)';
   btn.style.background = 'var(--blue-l)';
   document.getElementById('legal-modal').scrollTop = 0;
+}
+
+// ═══════════════════════════════════
+// LANGA COMPARE — dual-document comparison + scoped chat (Pro/Plus/Max only)
+// ═══════════════════════════════════
+
+function _cmpEligibleDocs() {
+  // Same-category comparison needs an already-analysed document with a
+  // known category (matches the backend's own is_analysed + category gate).
+  return userDocs.filter(function(d) { return d.is_analysed && d.category; });
+}
+
+async function loadComparisons(force) {
+  if (comparisonsLoaded && !force) return;
+  try {
+    var resp = await api('GET', '/compare');
+    userComparisons = resp || [];
+    comparisonsLoaded = true;
+  } catch (e) {
+    // Freemium hitting this view shouldn't happen (nav item is hidden), but
+    // fail quietly into an empty list rather than breaking the view.
+    userComparisons = [];
+  }
+}
+
+async function renderCompareView() {
+  var list = document.getElementById('compare-list');
+  list.innerHTML = '<div class="cmp-empty"><div class="chat-loading-dots" style="justify-content:center;display:flex;"><span></span><span></span><span></span></div></div>';
+  await loadComparisons();
+  if (!userComparisons.length) {
+    list.innerHTML =
+      '<div class="cmp-empty">' +
+        '<div class="cmp-empty-icon">⚖️</div>' +
+        '<div class="cmp-empty-title">Compare two documents side by side</div>' +
+        '<div class="cmp-empty-sub">Pick two documents in the same category — like two insurance quotes, or two tracking device contracts — and Langa will break down the differences field by field, with no overall verdict, just clarity.</div>' +
+        '<button class="btn btn-primary" onclick="openComparePicker()">+ New comparison</button>' +
+      '</div>';
+    return;
+  }
+  list.innerHTML = '<div class="doc-grid">' + userComparisons.map(function(c) {
+    var dateStr = fmtDate ? (fmtDate(c.created_at) || '') : '';
+    return '<div class="cmp-card" onclick="openCompareDetail(\'' + c.id + '\')">' +
+      '<div class="cmp-card-names">' + esc(c.document_a_name || 'Document A') + '<span class="cmp-card-vs">vs</span>' + esc(c.document_b_name || 'Document B') + '</div>' +
+      '<div class="cmp-card-meta">' + esc(_CAT_LABELS[c.category] || c.category) + (dateStr ? ' &middot; ' + esc(dateStr) : '') + '</div>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+// ── Picker (two steps: pick document A, then pick/upload document B) ────────
+
+function openComparePicker() {
+  _cmpPickerDocA = null;
+  document.getElementById('cmp-picker-title').textContent = 'New comparison';
+  _renderPickerStepA();
+  show('compare-picker-overlay');
+}
+function closeComparePicker() { hide('compare-picker-overlay'); }
+function closeComparePickerIfBg(e) { if (e.target === document.getElementById('compare-picker-overlay')) closeComparePicker(); }
+
+function _cmpDocPickRow(d, onclick) {
+  return '<div class="cmp-picker-doc" onclick="' + onclick + '">' +
+    '<div><div class="cmp-picker-doc-name">' + esc(d.name) + '</div><div class="cmp-picker-doc-meta">' + esc(_CAT_LABELS[d.category] || d.category) + (d.provider ? ' &middot; ' + esc(d.provider) : '') + '</div></div>' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
+  '</div>';
+}
+
+function _renderPickerStepA() {
+  document.getElementById('cmp-picker-title').textContent = 'Select the first document';
+  var eligible = _cmpEligibleDocs();
+  var body = document.getElementById('cmp-picker-body');
+  if (!eligible.length) {
+    body.innerHTML = '<div class="cmp-empty" style="padding:20px 0;"><div class="cmp-empty-sub">You need at least one analysed document before you can start a comparison.</div></div>';
+    return;
+  }
+  body.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Choose any analysed document to start.</div>' +
+    eligible.map(function(d) { return _cmpDocPickRow(d, "_pickDocA('" + d.id + "')"); }).join('');
+}
+
+function _pickDocA(id) {
+  _cmpPickerDocA = userDocs.find(function(d) { return d.id === id; });
+  if (!_cmpPickerDocA) return;
+  _renderPickerStepB();
+}
+
+function _pickDocB(id) {
+  if (!_cmpPickerDocA) return;
+  var docB = userDocs.find(function(d) { return d.id === id; });
+  if (!docB) return;
+  return createComparison(_cmpPickerDocA.id, docB.id);
+}
+
+function _renderPickerStepB() {
+  document.getElementById('cmp-picker-title').textContent = 'Select the second document';
+  var docA = _cmpPickerDocA;
+  var sameCategory = _cmpEligibleDocs().filter(function(d) { return d.id !== docA.id && d.category === docA.category; });
+  var body = document.getElementById('cmp-picker-body');
+  var html = '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Comparing against <strong>' + esc(docA.name) + '</strong> (' + esc(_CAT_LABELS[docA.category] || docA.category) + '). Pick another document in the same category, or upload a new one.</div>';
+  html += sameCategory.length
+    ? sameCategory.map(function(d) { return _cmpDocPickRow(d, "_pickDocB('" + d.id + "')"); }).join('')
+    : '<div class="cmp-picker-doc-meta" style="margin-bottom:10px;">No other ' + esc(_CAT_LABELS[docA.category] || docA.category) + ' documents yet — upload one below.</div>';
+  html += '<div class="upload-zone" id="cmp-upload-drop" style="margin-top:14px;">' +
+      '<input type="file" id="cmp-upload-file" accept=".txt,.pdf,.doc,.docx" onchange="_cmpHandleFileSelect(event)">' +
+      '<div class="uz-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>' +
+      '<div class="uz-title">Upload a new document</div>' +
+      '<div class="uz-sub">It\'ll be analysed and saved to your documents first — the comparison only proceeds if it turns out to be ' + esc(_CAT_LABELS[docA.category] || docA.category) + '</div>' +
+    '</div>' +
+    '<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="_renderPickerStepA()">&larr; Choose a different first document</button>';
+  body.innerHTML = html;
+}
+
+function _cmpHandleFileSelect(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  _cmpUploadAndCheck(file);
+}
+
+async function _cmpUploadAndCheck(file) {
+  var docA = _cmpPickerDocA;
+  var body = document.getElementById('cmp-picker-body');
+  body.innerHTML = '<div class="proc-card"><div class="spin"></div><div style="font-size:15px;font-weight:600;margin-bottom:5px;">Langa is reading your document…</div><div style="font-size:12px;color:var(--muted);">Analysing and saving it to your documents — this can take up to 30 seconds.</div></div>';
+
+  try {
+    var formData = new FormData();
+    formData.append('file', file);
+    formData.append('name', file.name.replace(/\.[^.]+$/, ''));
+    formData.append('document_type', 'contract');
+    var uploadResult = await api('POST', '/documents/upload', formData, { formData: true });
+    var docId = uploadResult.document_id;
+
+    var analysisResult = null;
+    var pw = null;
+    var pwAttempts = 0;
+    for (;;) {
+      try {
+        var payload = { document_id: docId };
+        if (pw) payload.password = pw;
+        analysisResult = await api('POST', '/analysis', payload);
+        break;
+      } catch (err) {
+        pw = null;
+        var msg = apiErrMsg(err);
+        if (msg === 'password_protected' || msg === 'wrong_password') {
+          if (pwAttempts >= 3) throw new Error('Unable to unlock this document. Please remove the password protection manually and try again.');
+          var pwVal = await _promptPdfPassword(msg === 'wrong_password' ? 'Incorrect password. Please try again.' : null);
+          if (pwVal === null) { _renderPickerStepB(); return; }
+          pw = pwVal; pwAttempts++;
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    var fullDoc = await api('GET', '/documents/' + docId).catch(function() { return null; });
+    var apiDocObj = {
+      id: docId, name: uploadResult.name || file.name, type: (fullDoc && fullDoc.type) || 'contract',
+      provider: (fullDoc && fullDoc.provider) || null, status: (fullDoc && fullDoc.status) || 'active',
+      is_analysed: true, category: (fullDoc && fullDoc.category) || null,
+      created_at: (fullDoc && fullDoc.created_at) || new Date().toISOString(),
+      expiry_date: (fullDoc && fullDoc.expiry_date) || null, renewal_date: (fullDoc && fullDoc.renewal_date) || null,
+      cancel_deadline: (fullDoc && fullDoc.cancel_deadline) || null,
+    };
+    var newDoc = apiDocToLocal(apiDocObj, {
+      risk_level: analysisResult.risk_level, risk_label: analysisResult.risk_label, summary: analysisResult.summary,
+      key_terms: analysisResult.key_terms, ai_insights: analysisResult.ai_insights, clauses: analysisResult.clauses,
+      is_scanned: analysisResult.is_scanned,
+    });
+    newDoc.category = apiDocObj.category; // apiDocToLocal doesn't carry category through — set explicitly
+    userDocs.push(newDoc);
+    _invalidateDocsCache();
+    renderCatFilter(); renderSidebar(); renderStats(); renderInsights(); renderUploadArea(); renderDocs();
+
+    // The document is saved regardless of outcome (done above) — the
+    // comparison only proceeds if the category actually matches.
+    if (newDoc.category && newDoc.category === docA.category) {
+      await createComparison(docA.id, newDoc.id);
+    } else {
+      body.innerHTML =
+        '<div class="cmp-empty" style="padding:16px 0;">' +
+          '<div class="cmp-empty-title">Different category</div>' +
+          '<div class="cmp-empty-sub"><strong>' + esc(newDoc.name) + '</strong> was analysed as <strong>' + esc(_CAT_LABELS[newDoc.category] || newDoc.category || 'unclassified') + '</strong>, not ' + esc(_CAT_LABELS[docA.category] || docA.category) + ' — so it can\'t be compared with ' + esc(docA.name) + '. It\'s been saved to your documents either way.</div>' +
+          '<button class="btn btn-primary" onclick="_renderPickerStepB()">Try another document</button>' +
+        '</div>';
+    }
+  } catch (e) {
+    toast('Upload failed', apiErrMsg(e), 'error', 5000);
+    _renderPickerStepB();
+  }
+}
+
+async function createComparison(documentAId, documentBId) {
+  var body = document.getElementById('cmp-picker-body');
+  body.innerHTML = '<div class="proc-card"><div class="spin"></div><div style="font-size:15px;font-weight:600;margin-bottom:5px;">Comparing your documents…</div><div style="font-size:12px;color:var(--muted);">Langa is reading both and lining up the differences.</div></div>';
+  try {
+    var comparison = await api('POST', '/compare', { document_a_id: documentAId, document_b_id: documentBId });
+    userComparisons.unshift({
+      id: comparison.id, document_a_id: comparison.document_a_id, document_b_id: comparison.document_b_id,
+      document_a_name: comparison.document_a_name, document_b_name: comparison.document_b_name,
+      category: comparison.category, created_at: comparison.created_at,
+    });
+    closeComparePicker();
+    renderCompareView();
+    openCompareDetail(comparison);
+  } catch (e) {
+    body.innerHTML = '<div class="cmp-empty" style="padding:16px 0;"><div class="cmp-empty-sub">' + esc(apiErrMsg(e)) + '</div><button class="btn btn-primary" onclick="closeComparePicker()">Close</button></div>';
+  }
+}
+
+// ── Detail (cached result — GET only, never regenerates) ────────────────────
+
+async function openCompareDetail(comparisonOrId) {
+  var comparison = comparisonOrId;
+  if (typeof comparisonOrId === 'string') {
+    try {
+      comparison = await api('GET', '/compare/' + comparisonOrId);
+    } catch (e) {
+      toast('Could not open comparison', apiErrMsg(e), 'error', 4000);
+      return;
+    }
+  }
+  _cmpCurrentComparison = comparison;
+  document.getElementById('cmp-detail-title').textContent = (comparison.document_a_name || 'Document A') + ' vs ' + (comparison.document_b_name || 'Document B');
+  document.getElementById('cmp-detail-badges').innerHTML = '<span class="badge plan-pro" style="background:var(--blue-l);color:var(--blue);">' + esc(_CAT_LABELS[comparison.category] || comparison.category) + '</span>';
+  document.getElementById('cmp-detail-table').innerHTML = _renderComparisonTable(comparison);
+  show('compare-detail-overlay');
+}
+function closeCompareDetail() { hide('compare-detail-overlay'); }
+function closeCompareDetailIfBg(e) { if (e.target === document.getElementById('compare-detail-overlay')) closeCompareDetail(); }
+
+function _renderComparisonTable(comparison) {
+  var fields = (comparison.result && comparison.result.fields) || {};
+  var rows = Object.keys(fields).map(function(key) {
+    var f = fields[key];
+    var aCls = f.type === 'text' && f.favorable === 'a' ? ' favorable' : '';
+    var bCls = f.type === 'text' && f.favorable === 'b' ? ' favorable' : '';
+    var aVal = f.type === 'list' ? ('<ul>' + (f.a || []).map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>') : esc(f.a);
+    var bVal = f.type === 'list' ? ('<ul>' + (f.b || []).map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>') : esc(f.b);
+    return '<tr class="cmp-row"><td>' + esc(f.label || key) + '</td><td class="cmp-cell' + aCls + '">' + aVal + '</td><td class="cmp-cell' + bCls + '">' + bVal + '</td></tr>';
+  }).join('');
+  return '<div style="overflow-x:auto;"><table class="cmp-table"><thead><tr><th></th><th class="cmp-th-doc">' + esc(comparison.document_a_name || 'Document A') + '</th><th class="cmp-th-doc">' + esc(comparison.document_b_name || 'Document B') + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+async function deleteComparisonFromDetail() {
+  if (!_cmpCurrentComparison) return;
+  if (!confirm('Delete this comparison? This does not delete the documents themselves.')) return;
+  try {
+    await api('DELETE', '/compare/' + _cmpCurrentComparison.id);
+    userComparisons = userComparisons.filter(function(c) { return c.id !== _cmpCurrentComparison.id; });
+    closeCompareDetail();
+    renderCompareView();
+    toast('Comparison deleted', '', 'info', 2500);
+  } catch (e) {
+    toast('Could not delete comparison', apiErrMsg(e), 'error', 4000);
+  }
+}
+
+// ── Scoped chat (same visual pattern as the single-document chat) ───────────
+
+async function openCompareChat() {
+  if (!_cmpCurrentComparison) return;
+  cmpChatHistory = [];
+  document.getElementById('cmp-chat-doc-name').textContent = (_cmpCurrentComparison.document_a_name || 'Document A') + ' vs ' + (_cmpCurrentComparison.document_b_name || 'Document B');
+  var wall = document.getElementById('cmp-chat-upgrade-wall');
+  if (wall) wall.classList.add('hidden');
+  var inputRow = document.getElementById('cmp-chat-input-row');
+  if (inputRow) inputRow.classList.remove('hidden');
+
+  var msgs = document.getElementById('cmp-chat-messages');
+  msgs.innerHTML = '<div class="chat-loading"><div class="chat-loading-dots"><span></span><span></span><span></span></div><div style="font-size:12px;color:rgba(255,255,255,0.45);">Loading conversation…</div></div>';
+  show('compare-chat-overlay');
+
+  try {
+    var histData = await api('GET', '/compare/' + _cmpCurrentComparison.id + '/chat/history');
+    cmpChatHistory = (histData.messages || []).slice(-20);
+  } catch (e) { /* silent */ }
+
+  msgs.innerHTML = '';
+  if (!cmpChatHistory.length) {
+    _cmpAppendAIMsg('I\'ve compared **' + esc(_cmpCurrentComparison.document_a_name || 'Document A') + '** and **' + esc(_cmpCurrentComparison.document_b_name || 'Document B') + '**. Ask me anything about either one, or how they stack up — I\'ll walk through the trade-offs, not tell you which to pick.');
+  } else {
+    cmpChatHistory.forEach(function(m) {
+      if (m.role === 'user') _cmpAppendUserMsg(m.content, m.created_at);
+      else _cmpAppendAIMsg(m.content, m.created_at);
+    });
+  }
+  document.getElementById('cmp-chat-input').focus();
+}
+function closeCompareChat() { hide('compare-chat-overlay'); }
+
+function _cmpAppendUserMsg(text, ts) {
+  var msgs = document.getElementById('cmp-chat-messages');
+  var t = _fmtChatTs(ts);
+  var d = document.createElement('div');
+  d.className = 'chat-msg chat-msg-user';
+  d.innerHTML = '<div class="chat-mini-avatar" style="background:rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:700;">' + (currentUser ? currentUser.avatar : '') + '</div><div><div class="chat-bubble">' + esc(text) + '</div><div class="chat-msg-time">' + t + '</div></div>';
+  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+}
+function _cmpAppendAIMsg(text, ts) {
+  var msgs = document.getElementById('cmp-chat-messages');
+  var t = _fmtChatTs(ts);
+  var d = document.createElement('div');
+  d.className = 'chat-msg chat-msg-ai';
+  d.innerHTML = _LI_AVATAR + '<div><div class="chat-bubble">' + renderMd(text) + '</div><div class="chat-msg-time">' + t + '</div></div>';
+  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+}
+function _cmpAppendTyping() {
+  var msgs = document.getElementById('cmp-chat-messages');
+  var id = 'cmp-typ-' + Date.now();
+  var d = document.createElement('div');
+  d.className = 'chat-msg chat-msg-ai'; d.id = id;
+  d.innerHTML = _LI_AVATAR + '<div class="chat-typing"><span></span><span></span><span></span></div>';
+  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+  return id;
+}
+function _cmpRemoveTyping(id) { var el = document.getElementById(id); if (el) el.remove(); }
+
+async function sendCompareChat() {
+  if (!_cmpCurrentComparison) return;
+  var inp = document.getElementById('cmp-chat-input');
+  var sendBtn = document.getElementById('cmp-chat-send');
+  var msg = inp.value.trim();
+  if (!msg || cmpProcessing) return;
+  inp.value = ''; inp.style.height = 'auto';
+  sendBtn.disabled = true;
+  var sentAt = new Date().toISOString();
+  _cmpAppendUserMsg(msg, sentAt);
+  var tid = _cmpAppendTyping();
+  cmpProcessing = true;
+
+  try {
+    var result = await api('POST', '/compare/' + _cmpCurrentComparison.id + '/chat', {
+      question: msg,
+      history: cmpChatHistory.slice(-20),
+    });
+    var replyAt = new Date().toISOString();
+    _cmpRemoveTyping(tid);
+    _cmpAppendAIMsg(result.answer, replyAt);
+    cmpChatHistory.push({ role: 'user', content: msg, ts: sentAt });
+    cmpChatHistory.push({ role: 'assistant', content: result.answer, ts: replyAt });
+  } catch (e) {
+    _cmpRemoveTyping(tid);
+    if (e.type === '429') {
+      setTimeout(function() {
+        var wall = document.getElementById('cmp-chat-upgrade-wall');
+        var inputRow = document.getElementById('cmp-chat-input-row');
+        if (wall) wall.classList.remove('hidden');
+        if (inputRow) inputRow.classList.add('hidden');
+      }, 200);
+    } else {
+      _cmpAppendAIMsg(apiErrMsg(e));
+    }
+  } finally {
+    cmpProcessing = false;
+    sendBtn.disabled = false;
+    document.getElementById('cmp-chat-input').focus();
+  }
 }
 </script>
 
