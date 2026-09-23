@@ -115,6 +115,12 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 [data-theme="dark"] .lp-auth-card{background:var(--white)!important;}
 [data-theme="dark"] .lp-auth-card h2{color:var(--navy)!important;}
 [data-theme="dark"] .lp-brand-logo{background:var(--white)!important;color:var(--blue)!important;}
+[data-theme="dark"] .lp-cap-card{background:var(--white)!important;border-color:var(--bdr)!important;}
+[data-theme="dark"] .lp-cap-icon{background:rgba(37,99,235,0.15)!important;}
+.lp-3col{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+.lp-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+@media(max-width:768px){.lp-3col{grid-template-columns:1fr;} .lp-4col{grid-template-columns:1fr;}}
+@media(min-width:769px) and (max-width:1024px){.lp-4col{grid-template-columns:repeat(2,1fr);}}
 .mv-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:24px;}
 @media(max-width:768px){.mv-grid{grid-template-columns:1fr;}}
 .mv-card{background:#FFFFFF;border:0.5px solid #E2E8F0;border-radius:12px;padding:2rem;border-left:4px solid transparent;}
@@ -1675,6 +1681,39 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     </div>
   </section>
 
+  <!-- PRIVACY FIRST -->
+  <section id="privacy" style="background:var(--white);padding:80px 24px;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:48px;">
+        <h2 style="font-family:'DM Serif Display',serif;font-size:40px;color:var(--navy);margin-bottom:12px;">Privacy isn't a feature. It's the foundation.</h2>
+        <p style="font-size:16px;color:var(--muted);">What actually happens to your documents before Langa reads them.</p>
+      </div>
+      <div class="lp-3col">
+        <div class="lp-why-card" style="padding:28px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#ECFEFF,#fff);">
+          <div class="lp-why-icon" style="width:48px;height:48px;background:linear-gradient(135deg,#CFFAFE,#A5F3FC);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3 style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px;">Your sensitive details, protected before analysis</h3>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7;">Before your document is analysed, ID numbers, phone numbers, email addresses, bank account numbers, physical addresses, and passport numbers are automatically detected and removed from the text sent for AI processing. Your original document, stored in your account, is never modified.</p>
+        </div>
+        <div class="lp-why-card" style="padding:28px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#EFF6FF,#fff);">
+          <div class="lp-why-icon" style="width:48px;height:48px;background:linear-gradient(135deg,#DBEAFE,#BFDBFE);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3 style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px;">Encrypted at rest and in transit</h3>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7;">Your documents are protected both while stored in your account and while being processed.</p>
+        </div>
+        <div class="lp-why-card" style="padding:28px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#EEF2FF,#fff);">
+          <div class="lp-why-icon" style="width:48px;height:48px;background:linear-gradient(135deg,#E0E7FF,#C7D2FE);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4338CA" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+          </div>
+          <h3 style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px;">Works with password-protected documents</h3>
+          <p style="font-size:14px;color:var(--muted);line-height:1.7;">Upload a document you've already password-protected. We can open and analyse it without ever storing your password.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- WHY LANGA AI -->
   <section id="features" style="background:var(--white);padding:80px 24px;">
     <div style="max-width:1200px;margin:0 auto;">
@@ -1762,6 +1801,50 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     </div>
   </section>
 
+  <!-- CAPABILITIES -->
+  <section id="capabilities" style="background:var(--white);padding:80px 24px;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:48px;">
+        <h2 style="font-family:'DM Serif Display',serif;font-size:40px;color:var(--navy);margin-bottom:12px;">Capabilities</h2>
+        <p style="font-size:16px;color:var(--muted);">What you can actually do with Langa.</p>
+      </div>
+      <div class="lp-4col">
+        <div class="lp-cap-card" style="padding:24px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#ECFEFF,#fff);">
+          <div class="lp-cap-icon" style="width:44px;height:44px;background:linear-gradient(135deg,#CFFAFE,#A5F3FC);border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <span class="plan-chip plan-pro" style="margin-bottom:10px;display:inline-block;">All plans</span>
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:7px;">Plain-English analysis</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;">Every contract, broken down in language you actually understand.</p>
+        </div>
+        <div class="lp-cap-card" style="padding:24px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#EFF6FF,#fff);">
+          <div class="lp-cap-icon" style="width:44px;height:44px;background:linear-gradient(135deg,#DBEAFE,#BFDBFE);border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <span class="plan-chip plan-pro" style="margin-bottom:10px;display:inline-block;">All plans</span>
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:7px;">Smart reminders</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;">Renewal dates and deadlines, flagged before they catch you out. Available on every plan, with email delivery on paid plans.</p>
+        </div>
+        <div class="lp-cap-card" style="padding:24px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#EEF2FF,#fff);">
+          <div class="lp-cap-icon" style="width:44px;height:44px;background:linear-gradient(135deg,#E0E7FF,#C7D2FE);border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4338CA" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <span class="plan-chip plan-pro" style="margin-bottom:10px;display:inline-block;">Max plan</span>
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:7px;">Team accounts</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;">Bring in a friend, a lawyer, or your team. Share only what they need to see.</p>
+        </div>
+        <div class="lp-cap-card" style="padding:24px;border-radius:16px;border:1px solid var(--bdr);background:linear-gradient(135deg,#FDF4FF,#fff);">
+          <div class="lp-cap-icon" style="width:44px;height:44px;background:linear-gradient(135deg,#F3E8FF,#E9D5FF);border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9333EA" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3" width="6.5" height="14" rx="1.5"/><rect x="11" y="3" width="6.5" height="14" rx="1.5"/><path d="M6 8.5v3M14 8.5v3"/></svg>
+          </div>
+          <span class="plan-chip plan-pro" style="margin-bottom:10px;display:inline-block;">Essential plan and up</span>
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:7px;">Langa Compare</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.65;">Two offers, side by side. See what's different, decide for yourself. No overall verdict — just clarity.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- SOLUTIONS -->
   <section id="solutions" style="background:var(--navy);padding:80px 24px;">
     <div style="max-width:1200px;margin:0 auto;">
@@ -1824,11 +1907,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           </thead>
           <tbody>
             <tr style="border-bottom:1px solid var(--bdr);">
-              <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Document uploads</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">2 total</td>
-              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">50/month</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">100/month</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited</td>
+              <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Documents (in your account)</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">2</td>
+              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">50</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">100</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">999</td>
             </tr>
             <tr class="lp-table-alt" style="border-bottom:1px solid var(--bdr);background:#FAFAFA;">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">AI summaries</td>
@@ -1846,10 +1929,17 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             </tr>
             <tr class="lp-table-alt" style="border-bottom:1px solid var(--bdr);background:#FAFAFA;">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Reminders</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">In-app</td>
+              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">In-app + email</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">In-app + email</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--muted);">In-app + email</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Langa Compare</td>
               <td style="padding:12px 16px;text-align:center;color:var(--red);">✕</td>
-              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);font-weight:500;">Unlimited</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Unlimited</td>
+              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--green);font-weight:700;">✓</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--green);">✓</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--green);">✓</td>
             </tr>
             <tr style="border-bottom:1px solid var(--bdr);">
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Insights dashboard</td>
@@ -1859,11 +1949,11 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
               <td style="padding:12px 16px;text-align:center;color:var(--green);">✓</td>
             </tr>
             <tr class="lp-table-alt" style="border-bottom:1px solid var(--bdr);background:#FAFAFA;">
-              <td style="padding:12px 16px;font-weight:500;color:var(--ink);">User accounts</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">1</td>
-              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--muted);">1</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">1</td>
-              <td style="padding:12px 16px;text-align:center;color:var(--muted);">Up to 5</td>
+              <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Team accounts</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--red);">✕</td>
+              <td style="padding:12px 16px;text-align:center;background:var(--blue-l);color:var(--red);">✕</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--red);">✕</td>
+              <td style="padding:12px 16px;text-align:center;color:var(--green);font-weight:700;">✓ Up to 5</td>
             </tr>
             <tr>
               <td style="padding:12px 16px;font-weight:500;color:var(--ink);">Support</td>
@@ -1890,7 +1980,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
             <div>✓ 2 documents</div>
             <div>✓ Basic summaries</div>
             <div>✓ Alert highlights</div>
-            <div style="color:var(--subtle);">✕ No reminders</div>
+            <div>✓ In-app reminders</div>
             <div style="color:var(--subtle);">✕ No AI chat</div>
           </div>
         </div>
@@ -1901,10 +1991,10 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Essential</h3>
           <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Individuals</p>
           <div style="font-size:26px;font-weight:700;color:var(--navy);margin-bottom:2px;">R59<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 50 documents/month</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 50 documents</div>
           <button class="btn btn-primary btn-full btn-sm" onclick="showSignup()" style="margin-bottom:16px;">Get Started</button>
           <div style="font-size:11px;color:var(--body);display:flex;flex-direction:column;gap:5px;">
-            <div>✓ 50 documents/month</div>
+            <div>✓ 50 documents</div>
             <div>✓ Full clause analysis</div>
             <div>✓ Ask Langa Intelligence chat</div>
             <div>✓ Smart reminders</div>
@@ -1917,10 +2007,10 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px;">Professional</h3>
           <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Power users</p>
           <div style="font-size:26px;font-weight:700;color:var(--ink);margin-bottom:2px;">R99<span style="font-size:13px;font-weight:400;color:var(--muted);">/mo</span></div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 100 documents/month</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:16px;">1 user · 100 documents</div>
           <button class="btn btn-ghost btn-full btn-sm" onclick="showSignup()" style="margin-bottom:16px;">Get Started</button>
           <div style="font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:5px;">
-            <div>✓ 100 documents/month</div>
+            <div>✓ 100 documents</div>
             <div>✓ All Essential features</div>
             <div>✓ Priority support</div>
           </div>
