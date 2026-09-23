@@ -4841,7 +4841,7 @@ async function reanalyseDoc() {
 }
 
 function updateDetailChatButton() {
-  var isPro = currentUser && currentUser.plan === 'pro';
+  var isPro = currentUser && currentUser.plan !== 'freemium';
   var labelEl = document.getElementById('dm-chat-label');
   var hintEl  = document.getElementById('dm-chat-hint');
   var remBtn  = document.getElementById('dm-reminder-btn');
@@ -4866,7 +4866,7 @@ async function openChat(doc) {
 
   document.getElementById('chat-doc-name').textContent = doc.name;
 
-  var isPro = currentUser && currentUser.plan === 'pro';
+  var isPro = currentUser && currentUser.plan !== 'freemium';
   var wall = document.getElementById('chat-upgrade-wall');
   if (wall) wall.classList.add('hidden');
   var inputRow = document.getElementById('chat-input-row');
@@ -5107,7 +5107,7 @@ function sendSuggest(q) {
 
 async function sendChat() {
   if (!chatDocContext) return;
-  var isPro = currentUser && currentUser.plan === 'pro';
+  var isPro = currentUser && currentUser.plan !== 'freemium';
   var inp = document.getElementById('chat-input');
   var sendBtn = document.getElementById('chat-send');
   var msg = inp.value.trim();
@@ -6716,7 +6716,7 @@ function formatDateZA(d) {
 }
 
 async function showReminderDialog() {
-  if (currentUser && currentUser.plan !== 'pro') { showReminderGate(); return; }
+  if (currentUser && currentUser.plan === 'freemium') { showReminderGate(); return; }
   if (!currentDoc) return;
   _remDocId = currentDoc.id;
   _remSelectedType = null;
