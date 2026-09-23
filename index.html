@@ -774,8 +774,24 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 
   #solutions > div > div { grid-template-columns: 1fr 1fr !important; }
 
-  /* Pricing table — hide on mobile, show cards only */
-  #pricing table { display: none !important; }
+  /* Pricing table — horizontal scroll with sticky first column on mobile,
+     instead of hiding the table entirely (the 4 pricing cards below already
+     show each plan's own features, but not a side-by-side feature comparison). */
+  #pricing-swipe-hint { display: flex !important; }
+  #pricing table {
+    display: table !important;
+    font-size: 12px !important;
+  }
+  #pricing table th:first-child, #pricing table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.10);
+  }
+  #pricing table thead th:first-child { background: #0891B2 !important; }
+  #pricing table tbody tr:not(.lp-table-alt) td:first-child { background: var(--white); }
+  #pricing table tbody tr.lp-table-alt td:first-child { background: #FAFAFA; }
+  [data-theme="dark"] #pricing table tbody tr.lp-table-alt td:first-child { background: var(--white) !important; }
   #pricing-cards {
     grid-template-columns: 1fr 1fr !important;
     gap: 12px !important;
@@ -1890,6 +1906,10 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
       </div>
 
       <!-- Feature Comparison Table -->
+      <div id="pricing-swipe-hint" style="display:none;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;font-size:12px;color:var(--muted);">
+        <span>Swipe to compare plans</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
       <div style="overflow-x:auto;margin-bottom:48px;border-radius:var(--r);box-shadow:0 4px 24px rgba(0,0,0,0.08);border:1px solid var(--bdr);">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
           <thead>
