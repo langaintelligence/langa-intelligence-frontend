@@ -776,8 +776,9 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
 
   /* Pricing table — horizontal scroll with sticky first column on mobile,
      instead of hiding the table entirely (the 4 pricing cards below already
-     show each plan's own features, but not a side-by-side feature comparison). */
-  #pricing-swipe-hint { display: flex !important; }
+     show each plan's own features, but not a side-by-side feature comparison).
+     The swipe hint itself is toggled by JS based on real overflow, not this
+     breakpoint — see _updatePricingSwipeHint(). */
   #pricing table {
     display: table !important;
     font-size: 12px !important;
@@ -7735,6 +7736,18 @@ async function sendCompareChat() {
     document.getElementById('cmp-chat-input').focus();
   }
 }
+
+// Pricing table "Swipe to compare plans" hint — shown only when the table
+// actually overflows its wrapper (real horizontal scroll available), not
+// tied to a fixed width breakpoint.
+function _updatePricingSwipeHint() {
+  var hint = document.getElementById('pricing-swipe-hint');
+  var wrap = document.querySelector('#pricing table')?.parentElement;
+  if (!hint || !wrap) return;
+  hint.style.display = wrap.scrollWidth > wrap.clientWidth ? 'flex' : 'none';
+}
+window.addEventListener('load', _updatePricingSwipeHint);
+window.addEventListener('resize', _updatePricingSwipeHint);
 </script>
 
 <!-- LEGAL PAGES MODAL -->
