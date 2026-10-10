@@ -2684,7 +2684,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
     <div class="modal-body">
       <div class="amber-info-banner" style="background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:12px 14px;margin-bottom:18px;display:flex;gap:10px;align-items:flex-start;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <div class="amber-body" style="font-size:12px;color:#B45309;line-height:1.5;"><strong class="amber-title" style="color:#92400E;">Payments coming soon.</strong> Try any plan free while we integrate payments — no card needed.</div>
+        <div class="amber-body" id="upgrade-banner-text" style="font-size:12px;color:#B45309;line-height:1.5;"><strong class="amber-title" style="color:#92400E;">Payments coming soon.</strong> Try any plan free while we integrate payments — no card needed.</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;">
         <!-- Pro -->
@@ -2794,7 +2794,7 @@ label{font-size:12px;font-weight:600;color:var(--body);display:block;margin-bott
           <!-- Cancel confirm (shown inline) -->
           <div id="bill-cancel-confirm" class="hidden" style="border:1.5px solid var(--red);background:var(--red-l);border-radius:12px;padding:20px;margin-top:14px;">
             <div style="font-size:14px;font-weight:700;color:#DC2626;margin-bottom:6px;">Cancel your subscription?</div>
-            <div style="font-size:12.5px;color:var(--body);margin-bottom:14px;line-height:1.6;">You will immediately lose access to:<br>
+            <div id="bill-cancel-copy" style="font-size:12.5px;color:var(--body);margin-bottom:14px;line-height:1.6;">You will immediately lose access to:<br>
               <strong>AI chat, smart reminders, 50 documents</strong> and full clause analysis.<br>
               Your documents will remain, but analysis is limited to 2.
             </div>
@@ -6600,9 +6600,91 @@ function showMonthlyLimitModal() {
   document.body.appendChild(overlay);
 }
 
-function showUpgradeModal() { show('upgrade-overlay'); }
+// ── Paystack billing-enabled gate ────────────────────────────────────────
+// Real checkout UI only ever replaces the "coming soon" UI once the backend
+// confirms PAYSTACK_SECRET_KEY is actually set — see GET /billing/status.
+// Until then every path below falls through to the exact pre-Paystack
+// behaviour (trial buttons, immediate-downgrade cancel), unchanged.
+var _billingEnabled = false;
+
+async function _refreshBillingStatus() {
+  try {
+    var s = await api('GET', '/billing/status');
+    _billingEnabled = !!s.billing_enabled;
+    return s;
+  } catch (e) {
+    _billingEnabled = false;
+    return null;
+  }
+}
+
+async function showUpgradeModal() {
+  show('upgrade-overlay');
+  await _refreshBillingStatus();
+  _applyUpgradeModalMode();
+}
 function closeUpgrade() { hide('upgrade-overlay'); }
 function closeUpgradeIfBg(e) { if(e.target===document.getElementById('upgrade-overlay')) closeUpgrade(); }
+
+function _applyUpgradeModalMode() {
+  var banner = document.getElementById('upgrade-banner-text');
+  var btns = { pro: document.getElementById('trial-pro-btn'), plus: document.getElementById('trial-plus-btn'), max: document.getElementById('trial-max-btn') };
+  var labels = { pro: 'Essential — R59/mo', plus: 'Professional — R99/mo', max: 'Max — R199/mo' };
+  if (_billingEnabled) {
+    if (banner) banner.innerHTML = '<strong style="color:#92400E;">Secure checkout via Paystack.</strong> Cancel anytime from Settings → Billing.';
+    Object.keys(btns).forEach(function(plan) {
+      var btn = btns[plan];
+      if (!btn) return;
+      btn.textContent = 'Upgrade to ' + labels[plan] + ' →';
+      btn.onclick = function() { startCheckout(plan); };
+    });
+  } else {
+    if (banner) banner.innerHTML = '<strong class="amber-title" style="color:#92400E;">Payments coming soon.</strong> Try any plan free while we integrate payments — no card needed.';
+    Object.keys(btns).forEach(function(plan) {
+      var btn = btns[plan];
+      if (!btn) return;
+      btn.textContent = 'Try ' + _planLabel(plan) + ' free →';
+      btn.onclick = function() { activateTrialPlan(plan); };
+    });
+  }
+}
+
+async function startCheckout(plan) {
+  var btn = document.getElementById('trial-' + plan + '-btn');
+  var orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Redirecting…'; }
+  try {
+    var res = await api('POST', '/billing/checkout', { plan: plan });
+    if (!res || !res.authorization_url) throw new Error('No checkout link returned.');
+    window.location.href = res.authorization_url;
+  } catch (e) {
+    toast('Could not start checkout', apiErrMsg(e), 'error');
+    if (btn) { btn.disabled = false; btn.textContent = orig; }
+  }
+}
+
+function _handleBillingRedirect(result) {
+  // The webhook (not this redirect) is what actually activates the plan,
+  // and it can land slightly after the user is already back in the app —
+  // a short delay then a single profile refresh is a simple, good-enough
+  // way to pick up the change without polling.
+  if (result === 'success') {
+    toast('Payment successful!', 'Activating your new plan…', 'success', 4000);
+    setTimeout(function() {
+      api('GET', '/auth/me').then(function(profile) {
+        applyProfile(profile);
+        renderSidebar(); renderStats(); renderUploadArea();
+        toast('Plan updated', 'Your new plan is now active.', 'success', 5000);
+      }).catch(function(){});
+    }, 3000);
+  } else if (result === 'pending') {
+    toast('Payment processing', 'We\'re confirming your payment — this can take a minute. Refresh shortly if your plan doesn\'t update.', 'info', 7000);
+  } else if (result === 'failed') {
+    toast('Payment failed', 'Your card was not charged successfully. Please try again.', 'error', 6000);
+  } else {
+    toast('Something went wrong', 'Please try again, or contact support if this keeps happening.', 'warn', 6000);
+  }
+}
 async function activateTrialPlan(plan) {
   var btnId = 'trial-' + plan + '-btn';
   var btn = document.getElementById(btnId);
@@ -6646,6 +6728,13 @@ async function showBillingModal() {
       next_billing_date: null, payment_method: null, invoices: [],
     };
   }
+  // billing_enabled / cancel_at_period_end come from /billing/status, not
+  // /billing/summary (untouched above) — merged in rather than replacing,
+  // so a /status failure just leaves these at their safe defaults (false).
+  var billStatus = await _refreshBillingStatus();
+  _billSummary.cancel_at_period_end = !!(billStatus && billStatus.cancel_at_period_end);
+  if (billStatus && billStatus.next_renewal_date) _billSummary.next_billing_date = billStatus.next_renewal_date;
+
   renderBillingOverview();
   renderBillingPlans();
   renderBillingPayment();
@@ -6681,9 +6770,15 @@ function renderBillingOverview() {
   document.getElementById('bill-usage-bar').style.background = pct >= 80 ? 'linear-gradient(90deg,#F59E0B,#EF4444)' : 'linear-gradient(90deg,var(--cyan),var(--blue))';
   document.getElementById('bill-usage-text').textContent = used + ' / ' + maxDocs + ' documents used';
 
-  document.getElementById('bill-overview-actions').innerHTML = isPro
-    ? '<button class="btn btn-ghost btn-full" style="font-size:12.5px;color:#DC2626;border-color:#FCA5A5;" onclick="showBillCancel()">Cancel subscription →</button>'
-    : '<button class="btn btn-primary btn-full" onclick="closeBilling();showUpgradeModal();">Upgrade to Essential — R59/month</button>';
+  if (isPro && s.cancel_at_period_end) {
+    var endDate = fmtDate(s.next_billing_date) || 'the end of your billing period';
+    document.getElementById('bill-overview-actions').innerHTML =
+      '<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0;">Subscription ending ' + esc(endDate) + ' — you keep full access until then.</div>';
+  } else {
+    document.getElementById('bill-overview-actions').innerHTML = isPro
+      ? '<button class="btn btn-ghost btn-full" style="font-size:12.5px;color:#DC2626;border-color:#FCA5A5;" onclick="showBillCancel()">Cancel subscription →</button>'
+      : '<button class="btn btn-primary btn-full" onclick="closeBilling();showUpgradeModal();">Upgrade to Essential — R59/month</button>';
+  }
 }
 
 function renderBillingPlans() {
@@ -6702,9 +6797,17 @@ function renderBillingPlans() {
     var pIdx = planOrder.indexOf(p.key);
     var isDowngrade = !isCurrent && pIdx < currentIdx;
     var isUpgrade = !isCurrent && pIdx > currentIdx;
+    // Once billing is live, a paid-to-paid switch goes through real
+    // checkout (never the raw DB-flip /change-plan), and "downgrade to
+    // Freemium" reuses the existing cancel-at-period-end confirm flow —
+    // so an active Paystack subscription is never silently left dangling.
+    // Unchanged (doBillChangePlan) until then.
+    var planAction = _billingEnabled
+      ? (p.key === 'freemium' ? '_startDowngradeToFreemium()' : "startCheckout('" + p.key + "')")
+      : "doBillChangePlan('" + p.key + "')";
     var btn = isCurrent
       ? '<div style="font-size:12px;font-weight:600;color:var(--blue);padding:8px 0;text-align:center;">✓ Current plan</div>'
-      : '<button class="btn btn-full btn-sm ' + (isUpgrade ? 'btn-primary' : 'btn-ghost') + '" style="margin-top:10px;" onclick="doBillChangePlan(\'' + p.key + '\')">' + (isUpgrade ? 'Upgrade' : 'Downgrade') + ' to ' + p.name + '</button>';
+      : '<button class="btn btn-full btn-sm ' + (isUpgrade ? 'btn-primary' : 'btn-ghost') + '" style="margin-top:10px;" onclick="' + planAction + '">' + (isUpgrade ? 'Upgrade' : 'Downgrade') + ' to ' + p.name + '</button>';
     return '<div class="bill-plan-card ' + (isCurrent ? 'current' : '') + '">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
         '<div style="font-size:14px;font-weight:700;color:var(--navy);">' + p.name + '</div>' +
@@ -6734,6 +6837,18 @@ function renderBillingPayment() {
         '</div>' +
         '<button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:12px;" onclick="toast(\'Update card\',\'Card management via Peach Payments — coming soon.\',\'info\')">Update →</button>' +
       '</div>';
+  } else if (_billingEnabled && _billSummary && _billSummary.plan !== 'freemium') {
+    el.innerHTML =
+      '<div style="border:1.5px dashed var(--bdr);border-radius:12px;padding:32px 20px;text-align:center;margin-bottom:16px;">' +
+        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="margin:0 auto 12px;display:block;"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' +
+        '<div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;">Manage your card via Paystack</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Update or replace your card on Paystack\'s secure page.</div>' +
+        '<button class="btn btn-primary" id="bill-manage-link-btn" onclick="openBillingManageLink()">Manage billing →</button>' +
+      '</div>' +
+      '<div style="font-size:11.5px;color:var(--subtle);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+        'Card details are encrypted and stored securely by Paystack. Langa never stores raw card data.' +
+      '</div>';
   } else {
     el.innerHTML =
       '<div style="border:1.5px dashed var(--bdr);border-radius:12px;padding:32px 20px;text-align:center;margin-bottom:16px;">' +
@@ -6746,6 +6861,24 @@ function renderBillingPayment() {
         '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
         'Card details are encrypted and stored securely by Peach Payments. Langa never stores raw card data.' +
       '</div>';
+  }
+}
+
+async function openBillingManageLink() {
+  var btn = document.getElementById('bill-manage-link-btn');
+  var orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+  try {
+    var res = await api('GET', '/billing/manage-link');
+    if (res && res.manage_url) {
+      window.open(res.manage_url, '_blank', 'noopener');
+    } else {
+      toast('Not available', 'Could not open billing management right now. Please try again shortly.', 'warn');
+    }
+  } catch (e) {
+    toast('Error', apiErrMsg(e), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = orig; }
   }
 }
 
@@ -6801,26 +6934,44 @@ async function doBillChangePlan(plan) {
 }
 
 function showBillCancel() {
+  var copy = document.getElementById('bill-cancel-copy');
+  if (copy) {
+    copy.innerHTML = _billingEnabled
+      ? 'You\'ll keep <strong>full access to your current plan</strong> until the end of your paid period — it just won\'t renew. You can resubscribe any time before then.'
+      : 'You will immediately lose access to:<br><strong>AI chat, smart reminders, 50 documents</strong> and full clause analysis.<br>Your documents will remain, but analysis is limited to 2.';
+  }
   show('bill-cancel-confirm');
   document.getElementById('bill-cancel-confirm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 function hideBillCancel() { hide('bill-cancel-confirm'); }
+function _startDowngradeToFreemium() { showBillTab('overview'); showBillCancel(); }
 
 async function confirmBillCancel() {
   var btn = document.getElementById('bill-cancel-confirm-btn');
   btn.disabled = true; btn.textContent = 'Cancelling…';
   try {
-    await api('POST', '/billing/cancel');
-    currentUser.plan = 'freemium'; currentUser.maxDocs = 2;
-    _billSummary.plan = 'freemium'; _billSummary.plan_name = 'Freemium';
-    _billSummary.price_zar = 0; _billSummary.billing_description = 'Free forever';
-    document.getElementById('nav-plan').textContent = 'Freemium';
-    document.getElementById('nav-plan').className = 'plan-chip plan-free';
-    _syncAvatarMenuPlan('Freemium');
+    var res = await api('POST', '/billing/cancel');
     hideBillCancel();
-    renderBillingOverview(); renderBillingPlans(); renderStats(); renderSidebar();
-    showBillTab('overview');
-    toast('Subscription cancelled', 'You have been moved to the Freemium plan.', 'info', 6000);
+    if (res && res.cancel_at_period_end) {
+      // Real Paystack flow — plan is unchanged, just scheduled to not renew.
+      _billSummary.cancel_at_period_end = true;
+      renderBillingOverview(); renderBillingPlans();
+      showBillTab('overview');
+      toast('Subscription set to cancel', 'You\'ll keep access until the end of your current billing period.', 'info', 6000);
+    } else {
+      // Billing not yet enabled (or no tracked paid-until date) — same
+      // immediate-downgrade behaviour as before Paystack existed.
+      currentUser.plan = 'freemium'; currentUser.maxDocs = 2;
+      _billSummary.plan = 'freemium'; _billSummary.plan_name = 'Freemium';
+      _billSummary.price_zar = 0; _billSummary.billing_description = 'Free forever';
+      _billSummary.cancel_at_period_end = false;
+      document.getElementById('nav-plan').textContent = 'Freemium';
+      document.getElementById('nav-plan').className = 'plan-chip plan-free';
+      _syncAvatarMenuPlan('Freemium');
+      renderBillingOverview(); renderBillingPlans(); renderStats(); renderSidebar();
+      showBillTab('overview');
+      toast('Subscription cancelled', 'You have been moved to the Freemium plan.', 'info', 6000);
+    }
   } catch(e) {
     toast('Error', e.message || 'Could not cancel. Please try again.', 'error');
     btn.disabled = false; btn.textContent = 'Yes, cancel subscription';
@@ -8225,6 +8376,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         }).catch(function(){}),
         _docsPromise,
       ]);
+
+      // Landed back here from Paystack checkout (success/pending/failed/error)
+      var billingResult = qp.get('billing');
+      if (billingResult) {
+        history.replaceState(null, '', window.location.pathname);
+        _handleBillingRedirect(billingResult);
+      }
       return;
     }
     // Refresh failed — clear stale token
